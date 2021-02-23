@@ -5,8 +5,9 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import rs.arthu.mel.androidpvt.PvtActivity.Companion.NUMBER_OF_STIMULUS_KEY
+import rs.arthu.mel.androidpvtlib.PvtActivity.Companion.NUMBER_OF_STIMULUS_KEY
 import rs.arthu.mel.androidpvt.databinding.ActivityMainBinding
+import rs.arthu.mel.androidpvtlib.PvtActivity
 
 class MainActivity : AppCompatActivity() {
 
