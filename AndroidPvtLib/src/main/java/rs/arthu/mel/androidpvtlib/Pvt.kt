@@ -1,4 +1,4 @@
-package rs.arthu.mel.androidpvt
+package rs.arthu.mel.androidpvtlib
 
 import android.util.Log
 import com.google.gson.Gson
