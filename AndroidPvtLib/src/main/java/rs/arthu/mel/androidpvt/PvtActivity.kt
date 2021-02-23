@@ -5,8 +5,6 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
-import android.view.Window
-import android.view.WindowManager
 import rs.arthu.mel.androidpvt.databinding.ActivityPvtBinding
 
 class PvtActivity : AppCompatActivity() {
@@ -17,8 +15,9 @@ class PvtActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setupWindow()
-        setupBinding()
+        binding = ActivityPvtBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
 
         val numberOfStimulus =
             intent.getIntExtra(NUMBER_OF_STIMULUS_KEY, DEFAULT_NUMBER_OF_STIMULUS)
@@ -77,20 +76,6 @@ class PvtActivity : AppCompatActivity() {
         }
 
         return true
-    }
-
-    private fun setupWindow() {
-        requestWindowFeature(Window.FEATURE_NO_TITLE)
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN)
-    }
-
-    private fun setupBinding() {
-        binding = ActivityPvtBinding.inflate(layoutInflater)
-        val view = binding.root
-        setContentView(view)
-
     }
 
     private fun updateCountdown(millisElapsed: Long) {

@@ -3,7 +3,7 @@
     package="rs.arthu.mel.androidpvt">
 
     <application>
-        <activity android:name=".PvtActivity"></activity>
+        <activity android:name=".PvtActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
     </application>
-
 </manifest>
