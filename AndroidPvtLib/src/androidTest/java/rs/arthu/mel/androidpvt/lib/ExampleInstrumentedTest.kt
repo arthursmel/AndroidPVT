@@ -1,4 +1,4 @@
-package rs.arthu.mel.androidpvt
+package rs.arthu.mel.androidpvt.lib
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("rs.arthu.mel.androidpvt", appContext.packageName)
+        assertEquals("rs.arthu.mel.androidpvt.lib", appContext.packageName)
     }
 }

@@ -1,13 +1,13 @@
-package rs.arthu.mel.androidpvt
+package rs.arthu.mel.androidpvt.app
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import rs.arthu.mel.androidpvtlib.PvtActivity.Companion.NUMBER_OF_STIMULUS_KEY
-import rs.arthu.mel.androidpvt.databinding.ActivityMainBinding
-import rs.arthu.mel.androidpvtlib.PvtActivity
+import rs.arthu.mel.androidpvt.lib.PvtActivity.Companion.NUMBER_OF_STIMULUS_KEY
+import rs.arthu.mel.androidpvt.app.databinding.ActivityMainBinding
+import rs.arthu.mel.androidpvt.lib.PvtActivity
 
 class MainActivity : AppCompatActivity() {
 

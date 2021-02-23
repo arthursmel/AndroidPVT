@@ -1,4 +1,4 @@
-package rs.arthu.mel.androidpvt
+package rs.arthu.mel.androidpvt.app
 
 import org.junit.Test
 

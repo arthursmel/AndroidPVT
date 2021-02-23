@@ -1,11 +1,11 @@
-package rs.arthu.mel.androidpvtlib
+package rs.arthu.mel.androidpvt.lib
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
-import rs.arthu.mel.androidpvtlib.databinding.ActivityPvtBinding
+import rs.arthu.mel.androidpvt.lib.databinding.ActivityPvtBinding
 
 class PvtActivity : AppCompatActivity() {
 
