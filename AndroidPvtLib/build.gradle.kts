@@ -33,6 +33,11 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    mavenPublish {
+        nexus {
+            stagingProfile = "rs.arthu"
+        }
+    }
 }
 
 dependencies {

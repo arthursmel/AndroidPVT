@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("rs.arthu.mel.androidpvt.lib", appContext.packageName)
+        assertEquals("rs.arthu.androidpvt.lib", appContext.packageName)
     }
 }
