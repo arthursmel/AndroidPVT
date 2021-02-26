@@ -22,7 +22,8 @@ class PvtActivity : AppCompatActivity() {
         val numberOfStimulus =
             intent.getIntExtra(NUMBER_OF_STIMULUS_KEY, DEFAULT_NUMBER_OF_STIMULUS)
 
-        pvt = Pvt(numberOfStimulus)
+        pvt = Pvt(stimulusCount = numberOfStimulus)
+
         pvt?.setListener(
             onStartCountdown = {
                 binding.textViewCountdown.visibility = View.VISIBLE

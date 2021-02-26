@@ -8,20 +8,26 @@ import kotlinx.coroutines.Dispatchers.Main
 import java.lang.IllegalStateException
 import kotlin.properties.Delegates
 
-/**
- * @property numberOfStimulus the number of PVTs that will be displayed to the user
- */
-class Pvt(private val numberOfStimulus: Int) {
+internal class Pvt(
+    private val stimulusCount: Int = 3,
+    private val minInterval: Long = 2 * ONE_SECOND,
+    private val maxInterval: Long = 4 * ONE_SECOND,
+    private val countDownTime: Long = 3 * ONE_SECOND,
+    private val stimulusTimeout: Long = 10 * ONE_SECOND,
+    private val postResponseDelay: Long = 2 * ONE_SECOND,
+    private val postCompletionDelay: Long = 2 * ONE_SECOND,
+    private val logStateTransitions: Boolean = false
+) {
 
-    private var remainingTestCount = numberOfStimulus
+    private var remainingTestCount = stimulusCount
     private var listener: PvtListener? = null
     private var curJob: Job? = null
     private val results: MutableList<PvtResult> = mutableListOf()
 
     private var curState by Delegates.observable<PvtState>(INIT_STATE, {
-            _, oldState, newState -> if (LOG_STATE_CHANGES) {
-        Log.d(TAG, "transition ($oldState -> $newState)")
-    }
+            _, oldState, newState -> if (logStateTransitions) {
+            Log.d(TAG, "transition ($oldState -> $newState)")
+        }
     })
 
     fun handleActionDownTouchEvent() {
@@ -51,14 +57,11 @@ class Pvt(private val numberOfStimulus: Int) {
         }
     }
 
-    /**
-     * Restarts the PVT, can be called during any test state
-     */
     fun restart() {
         CoroutineScope(Default).launch {
             curJob?.cancelAndJoin()
 
-            remainingTestCount = numberOfStimulus
+            remainingTestCount = stimulusCount
             curState = curState.consumeAction(Action.Restart)
 
             curJob = runTest(true, remainingTestCount)
@@ -101,7 +104,7 @@ class Pvt(private val numberOfStimulus: Int) {
 
         withContext(Main) { listener?.onStartCountdown() }
 
-        (COUNTDOWN_MILLIS downTo ONE_SECOND step ONE_SECOND).forEach { i ->
+        (countDownTime downTo ONE_SECOND step ONE_SECOND).forEach { i ->
             withContext(Main) { listener?.onCountdownUpdate(i) }
             delay(ONE_SECOND)
         }
@@ -120,7 +123,7 @@ class Pvt(private val numberOfStimulus: Int) {
         curState = curState.consumeAction(Action.ShowStimulus)
         withContext(Main) { listener?.onStimulusShowing() }
 
-        while (timeSinceCalled(startTimestamp) < STIMULUS_TIMEOUT) {
+        while (timeSinceCalled(startTimestamp) < stimulusTimeout) {
             if (curState is ValidReaction) {
                 return handleValidReaction(startTimestamp, interval)
             }
@@ -143,7 +146,7 @@ class Pvt(private val numberOfStimulus: Int) {
         // and value displaced on screen for the post response delay
         withContext(Main) { listener?.onReactionDelayUpdate(reactionDelay) }
 
-        delay(STIMULUS_POST_RESPONSE_DELAY)
+        delay(postResponseDelay)
         withContext(Main) { listener?.onStimulusHidden() }
         return PvtResult(remainingTestCount, startTimestamp, interval, reactionDelay)
     }
@@ -152,7 +155,7 @@ class Pvt(private val numberOfStimulus: Int) {
         curState = curState.consumeAction(Action.InvalidReaction)
         withContext(Main) { listener?.onInvalidReaction() }
 
-        delay(POST_INVALID_REACTION_DELAY)
+        delay(postResponseDelay)
 
         curJob = runTest(false, remainingTestCount)
     }
@@ -161,7 +164,7 @@ class Pvt(private val numberOfStimulus: Int) {
         curState = curState.consumeAction(Action.Complete)
         withContext(Main) { listener?.onCompleteTest() }
 
-        delay(POST_COMPLETE_DELAY)
+        delay(postCompletionDelay)
         withContext(Main) {
             listener?.onResults(results.toJson())
         }
@@ -169,12 +172,16 @@ class Pvt(private val numberOfStimulus: Int) {
 
     private fun timeSinceCalled(startTimestamp: Long) = System.currentTimeMillis() - startTimestamp
 
-    private fun getRandomIntervalDelay(): Long = (MIN_INTERVAL_DELAY..MAX_INTERVAL_DELAY).random()
+    private fun getRandomIntervalDelay(): Long = (minInterval..maxInterval).random()
 
     private fun <T> MutableList<T>.addSafe(item: T?) {
         item?.let {
             this.add(it)
         }
+    }
+
+    private fun Int.seconds(): Long {
+        return this.toLong()* 1000
     }
 
     private fun <T> MutableList<T>.toJson(): String = Gson().toJson(this)
@@ -309,17 +316,13 @@ class Pvt(private val numberOfStimulus: Int) {
     companion object {
         private const val TAG = "PVT"
         private const val ONE_SECOND: Long = 1000
-        private const val LOG_STATE_CHANGES = false
         private val INIT_STATE = Instructions()
-
-        private const val COUNTDOWN_MILLIS = 3 * ONE_SECOND
-        private const val STIMULUS_TIMEOUT = 10 * ONE_SECOND
-        private const val STIMULUS_POST_RESPONSE_DELAY = 2 * ONE_SECOND
-        private const val POST_INVALID_REACTION_DELAY = 2 * ONE_SECOND
-        private const val POST_COMPLETE_DELAY = 2 * ONE_SECOND
-        private const val MIN_INTERVAL_DELAY = 2 * ONE_SECOND
-        private const val MAX_INTERVAL_DELAY = 4 * ONE_SECOND
     }
 
-    data class PvtResult(val testNumber: Int, val timestamp: Long, val interval: Long, val reactionDelay: Long)
+    data class PvtResult(
+        val testNumber: Int,
+        val timestamp: Long,
+        val interval: Long,
+        val reactionDelay: Long
+        )
 }
