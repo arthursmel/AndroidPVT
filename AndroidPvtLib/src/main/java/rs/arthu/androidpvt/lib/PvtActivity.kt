@@ -21,12 +21,12 @@ class PvtActivity : AppCompatActivity() {
         val view = binding.root
         setContentView(view)
 
+        val intentExtras = intent.extras
+        val pvtArgs = getPvtArgsFromIntentExtras(intentExtras)
 
-        val numberOfStimulus =
-            intent.getIntExtra(STIMULUS_COUNT)
-        Log.d(TAG, "Intent: $numberOfStimulus")
+        Log.d(TAG, "args: $pvtArgs")
 
-        pvt = Pvt(stimulusCount = numberOfStimulus)
+        pvt = Pvt(pvtArgs)
 
         pvt?.setListener(
             onStartCountdown = {
@@ -89,6 +89,47 @@ class PvtActivity : AppCompatActivity() {
 
     private fun updateReactionDelay(millisElapsed: Long) {
         binding.textViewMessage.text = getString(R.string.reaction_delay, millisElapsed)
+    }
+
+    private fun getPvtArgsFromIntentExtras(bundle: Bundle?): Pvt.Args {
+        if (bundle == null) return Pvt.Args.default()
+
+        val keySet = bundle.keySet()
+
+        var stimulusCount: Int? = null
+        var minInterval: Long? = null
+        var maxInterval: Long? = null
+        var countDownTime: Long? = null
+        var stimulusTimeout: Long? = null
+        var postResponseDelay: Long? = null
+
+        if (keySet.contains(STIMULUS_COUNT)) {
+            stimulusCount = bundle.getInt(STIMULUS_COUNT)
+        }
+
+        if (keySet.contains(MIN_INTERVAL)) {
+            minInterval = bundle.getLong(MIN_INTERVAL)
+        }
+
+        if (keySet.contains(MAX_INTERVAL)) {
+            maxInterval = bundle.getLong(MAX_INTERVAL)
+        }
+
+        if (keySet.contains(COUNTDOWN_TIME)) {
+            countDownTime = bundle.getLong(COUNTDOWN_TIME)
+        }
+
+        if (keySet.contains(STIMULUS_TIMEOUT)) {
+            stimulusTimeout = bundle.getLong(STIMULUS_TIMEOUT)
+        }
+
+        if (keySet.contains(POST_RESPONSE_DELAY)) {
+            postResponseDelay = bundle.getLong(POST_RESPONSE_DELAY)
+        }
+
+        return Pvt.Args(
+            stimulusCount, minInterval, maxInterval, countDownTime, stimulusTimeout, postResponseDelay
+        )
     }
 
     override fun onDestroy() {
@@ -170,6 +211,5 @@ class PvtActivity : AppCompatActivity() {
         const val COUNTDOWN_TIME = "countdownTime"
         const val STIMULUS_TIMEOUT = "stimulusTimeout"
         const val POST_RESPONSE_DELAY = "postResponseDelay"
-        const val DEFAULT_NUMBER_OF_STIMULUS = 3
     }
 }

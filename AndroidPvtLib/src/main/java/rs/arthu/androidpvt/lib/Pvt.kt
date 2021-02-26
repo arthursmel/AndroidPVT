@@ -8,19 +8,12 @@ import kotlinx.coroutines.Dispatchers.Main
 import java.lang.IllegalStateException
 import kotlin.properties.Delegates
 
-internal class Pvt(
-    private val stimulusCount: Int = 3,
-    private val minInterval: Long = 2 * ONE_SECOND,
-    private val maxInterval: Long = 4 * ONE_SECOND,
-    private val countDownTime: Long = 3 * ONE_SECOND,
-    private val stimulusTimeout: Long = 10 * ONE_SECOND,
-    private val postResponseDelay: Long = 2 * ONE_SECOND,
-) {
+internal class Pvt(private val args: Args = Args.default()) {
 
-    private var remainingTestCount = stimulusCount
+    private var remainingTestCount = args.stimulusCount
     private var listener: PvtListener? = null
     private var curJob: Job? = null
-    private val results: MutableList<PvtResult> = mutableListOf()
+    private val results: MutableList<Result> = mutableListOf()
 
     private var curState by Delegates.observable<PvtState>(INIT_STATE, {
             _, oldState, newState -> if (LOG_STATE_TRANSITIONS) {
@@ -59,7 +52,7 @@ internal class Pvt(
         CoroutineScope(Default).launch {
             curJob?.cancelAndJoin()
 
-            remainingTestCount = stimulusCount
+            remainingTestCount = args.stimulusCount
             curState = curState.consumeAction(Action.Restart)
 
             curJob = runTest(true, remainingTestCount)
@@ -88,7 +81,7 @@ internal class Pvt(
         }
     }
 
-    private suspend fun runNextTest(result: PvtResult?) {
+    private suspend fun runNextTest(result: Result?) {
         if (result == null) {
             handleInvalidReaction()
         } else {
@@ -102,7 +95,7 @@ internal class Pvt(
 
         withContext(Main) { listener?.onStartCountdown() }
 
-        (countDownTime downTo ONE_SECOND step ONE_SECOND).forEach { i ->
+        (args.countDownTime downTo ONE_SECOND step ONE_SECOND).forEach { i ->
             withContext(Main) { listener?.onCountdownUpdate(i) }
             delay(ONE_SECOND)
         }
@@ -117,11 +110,11 @@ internal class Pvt(
         delay(delay)
     }
 
-    private suspend fun runStimulus(startTimestamp: Long, interval: Long): PvtResult? {
+    private suspend fun runStimulus(startTimestamp: Long, interval: Long): Result? {
         curState = curState.consumeAction(Action.ShowStimulus)
         withContext(Main) { listener?.onStimulusShowing() }
 
-        while (timeSinceCalled(startTimestamp) < stimulusTimeout) {
+        while (timeSinceCalled(startTimestamp) < args.stimulusTimeout) {
             if (curState is ValidReaction) {
                 return handleValidReaction(startTimestamp, interval)
             }
@@ -135,7 +128,7 @@ internal class Pvt(
         return null
     }
 
-    private suspend fun handleValidReaction(startTimestamp: Long, interval: Long): PvtResult {
+    private suspend fun handleValidReaction(startTimestamp: Long, interval: Long): Result {
         val reactionTimestamp = (curState as ValidReaction).reactionDelay
         val reactionDelay = reactionTimestamp - startTimestamp
 
@@ -144,16 +137,16 @@ internal class Pvt(
         // and value displaced on screen for the post response delay
         withContext(Main) { listener?.onReactionDelayUpdate(reactionDelay) }
 
-        delay(postResponseDelay)
+        delay(args.postResponseDelay)
         withContext(Main) { listener?.onStimulusHidden() }
-        return PvtResult(remainingTestCount, startTimestamp, interval, reactionDelay)
+        return Result(remainingTestCount, startTimestamp, interval, reactionDelay)
     }
 
     private suspend fun handleInvalidReaction() {
         curState = curState.consumeAction(Action.InvalidReaction)
         withContext(Main) { listener?.onInvalidReaction() }
 
-        delay(postResponseDelay)
+        delay(args.postResponseDelay)
 
         curJob = runTest(false, remainingTestCount)
     }
@@ -162,7 +155,7 @@ internal class Pvt(
         curState = curState.consumeAction(Action.Complete)
         withContext(Main) { listener?.onCompleteTest() }
 
-        delay(postResponseDelay)
+        delay(args.postResponseDelay)
 
         withContext(Main) {
             listener?.onResults(results.toJson())
@@ -171,16 +164,12 @@ internal class Pvt(
 
     private fun timeSinceCalled(startTimestamp: Long) = System.currentTimeMillis() - startTimestamp
 
-    private fun getRandomIntervalDelay(): Long = (minInterval..maxInterval).random()
+    private fun getRandomIntervalDelay(): Long = (args.minInterval..args.maxInterval).random()
 
     private fun <T> MutableList<T>.addSafe(item: T?) {
         item?.let {
             this.add(it)
         }
-    }
-
-    private fun Int.seconds(): Long {
-        return this.toLong()* 1000
     }
 
     private fun <T> MutableList<T>.toJson(): String = Gson().toJson(this)
@@ -312,17 +301,62 @@ internal class Pvt(
         }
     }
 
-    companion object {
+    private companion object {
         private const val TAG = "PVT"
         private const val ONE_SECOND: Long = 1000
         private const val LOG_STATE_TRANSITIONS: Boolean = false
         private val INIT_STATE = Instructions()
+
+        private const val DEFAULT_STIMULUS_COUNT = 3
+        private const val DEFAULT_MIN_INTERVAL = 2 * ONE_SECOND
+        private const val DEFAULT_MAX_INTERVAL = 4 * ONE_SECOND
+        private const val DEFAULT_COUNTDOWN_TIME = 3 * ONE_SECOND
+        private const val DEFAULT_STIMULUS_TIMEOUT = 10 * ONE_SECOND
+        private const val DEFAULT_POST_RESPONSE_DELAY = 2 * ONE_SECOND
     }
 
-    data class PvtResult(
+    internal data class Result(
         val testNumber: Int,
         val timestamp: Long,
         val interval: Long,
         val reactionDelay: Long
         )
+
+    internal data class Args(
+        var stimulusCount: Int = DEFAULT_STIMULUS_COUNT,
+        var minInterval: Long = DEFAULT_MIN_INTERVAL,
+        var maxInterval: Long = DEFAULT_MAX_INTERVAL,
+        var countDownTime: Long = DEFAULT_COUNTDOWN_TIME,
+        var stimulusTimeout: Long = DEFAULT_STIMULUS_TIMEOUT,
+        var postResponseDelay: Long = DEFAULT_POST_RESPONSE_DELAY,
+    ) {
+        constructor(
+            stimulusCount: Int? = null,
+            minInterval: Long? = null,
+            maxInterval: Long? = null,
+            countDownTime: Long? = null,
+            stimulusTimeout: Long? = null,
+            postResponseDelay: Long? = null
+        ) : this(
+            stimulusCount ?: DEFAULT_STIMULUS_COUNT,
+            minInterval ?: DEFAULT_MIN_INTERVAL,
+            maxInterval ?: DEFAULT_MAX_INTERVAL,
+            countDownTime ?: DEFAULT_COUNTDOWN_TIME,
+            stimulusTimeout ?: DEFAULT_STIMULUS_TIMEOUT,
+            postResponseDelay ?: DEFAULT_POST_RESPONSE_DELAY
+        )
+
+        companion object {
+            fun default(): Args {
+                return Args(
+                    DEFAULT_STIMULUS_COUNT,
+                    DEFAULT_MIN_INTERVAL,
+                    DEFAULT_MAX_INTERVAL,
+                    DEFAULT_COUNTDOWN_TIME,
+                    DEFAULT_STIMULUS_TIMEOUT,
+                    DEFAULT_POST_RESPONSE_DELAY
+                )
+            }
+        }
+    }
 }

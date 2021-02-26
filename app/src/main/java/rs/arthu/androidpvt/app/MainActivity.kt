@@ -27,7 +27,7 @@ class MainActivity : AppCompatActivity() {
     private fun startPvtActivity() {
         val pvtActivityIntent = PvtActivity.Builder()
             .withStimulusCount(4)
-            .withCountdownTime(5)
+            .withCountdownTime(3) 
             .withInterval(2 * 1000, 4 * 1000)
             .withPostResponseDelay(2 * 1000)
             .withStimulusTimeout(10 * 1000)
