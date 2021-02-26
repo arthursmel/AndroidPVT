@@ -15,8 +15,6 @@ internal class Pvt(
     private val countDownTime: Long = 3 * ONE_SECOND,
     private val stimulusTimeout: Long = 10 * ONE_SECOND,
     private val postResponseDelay: Long = 2 * ONE_SECOND,
-    private val postCompletionDelay: Long = 2 * ONE_SECOND,
-    private val logStateTransitions: Boolean = false
 ) {
 
     private var remainingTestCount = stimulusCount
@@ -25,7 +23,7 @@ internal class Pvt(
     private val results: MutableList<PvtResult> = mutableListOf()
 
     private var curState by Delegates.observable<PvtState>(INIT_STATE, {
-            _, oldState, newState -> if (logStateTransitions) {
+            _, oldState, newState -> if (LOG_STATE_TRANSITIONS) {
             Log.d(TAG, "transition ($oldState -> $newState)")
         }
     })
@@ -164,7 +162,8 @@ internal class Pvt(
         curState = curState.consumeAction(Action.Complete)
         withContext(Main) { listener?.onCompleteTest() }
 
-        delay(postCompletionDelay)
+        delay(postResponseDelay)
+
         withContext(Main) {
             listener?.onResults(results.toJson())
         }
@@ -316,6 +315,7 @@ internal class Pvt(
     companion object {
         private const val TAG = "PVT"
         private const val ONE_SECOND: Long = 1000
+        private const val LOG_STATE_TRANSITIONS: Boolean = false
         private val INIT_STATE = Instructions()
     }
 

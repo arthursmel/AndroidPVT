@@ -5,7 +5,6 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import rs.arthu.androidpvt.lib.PvtActivity.Companion.NUMBER_OF_STIMULUS_KEY
 import rs.arthu.androidpvt.app.databinding.ActivityMainBinding
 import rs.arthu.androidpvt.lib.PvtActivity
 
@@ -26,9 +25,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startPvtActivity() {
-        val intent = Intent(this, PvtActivity::class.java)
-        intent.putExtra(NUMBER_OF_STIMULUS_KEY, 3)
-        startActivityForResult(intent, PVT_REQUEST)
+        val pvtActivityIntent = PvtActivity.Builder()
+            .withStimulusCount(4)
+            .withCountdownTime(5)
+            .withInterval(2 * 1000, 4 * 1000)
+            .withPostResponseDelay(2 * 1000)
+            .withStimulusTimeout(10 * 1000)
+            .build(this)
+
+        startActivityForResult(pvtActivityIntent, PVT_REQUEST)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -40,13 +45,10 @@ class MainActivity : AppCompatActivity() {
             PVT_REQUEST -> {
                 data?.getStringExtra(PvtActivity.PVT_RESULTS_KEY)
             }
-            else -> {
-                "No results"
-            }
+            else -> "No results"
         }
 
         Toast.makeText(this, jsonResults, Toast.LENGTH_LONG).show()
-        Log.d(TAG, jsonResults!!)
     }
 
     companion object {
