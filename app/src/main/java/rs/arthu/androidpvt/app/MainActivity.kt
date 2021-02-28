@@ -3,9 +3,9 @@ package rs.arthu.androidpvt.app
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import rs.arthu.androidpvt.app.databinding.ActivityMainBinding
+import rs.arthu.androidpvt.lib.PVT_RESULTS_KEY
 import rs.arthu.androidpvt.lib.PvtActivity
 
 class MainActivity : AppCompatActivity() {
@@ -27,7 +27,7 @@ class MainActivity : AppCompatActivity() {
     private fun startPvtActivity() {
         val pvtActivityIntent = PvtActivity.Builder()
             .withStimulusCount(4)
-            .withCountdownTime(3) 
+            .withCountdownTime(3)
             .withInterval(2 * 1000, 4 * 1000)
             .withPostResponseDelay(2 * 1000)
             .withStimulusTimeout(10 * 1000)
@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
 
         val jsonResults: String? = when (requestCode) {
             PVT_REQUEST -> {
-                data?.getStringExtra(PvtActivity.PVT_RESULTS_KEY)
+                data?.getStringExtra(PVT_RESULTS_KEY)
             }
             else -> "No results"
         }

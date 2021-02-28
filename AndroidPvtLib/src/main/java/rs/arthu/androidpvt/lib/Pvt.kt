@@ -8,7 +8,15 @@ import kotlinx.coroutines.Dispatchers.Main
 import java.lang.IllegalStateException
 import kotlin.properties.Delegates
 
-internal class Pvt(private val args: Args = Args.default()) {
+internal const val ONE_SECOND: Long = 1000
+internal const val DEFAULT_STIMULUS_COUNT = 3
+internal const val DEFAULT_MIN_INTERVAL = 2 * ONE_SECOND
+internal const val DEFAULT_MAX_INTERVAL = 4 * ONE_SECOND
+internal const val DEFAULT_COUNTDOWN_TIME = 3 * ONE_SECOND
+internal const val DEFAULT_STIMULUS_TIMEOUT = 10 * ONE_SECOND
+internal const val DEFAULT_POST_RESPONSE_DELAY = 2 * ONE_SECOND
+
+internal class Pvt(private val args: PvtArgs = PvtArgs.default()) {
 
     private var remainingTestCount = args.stimulusCount
     private var listener: PvtListener? = null
@@ -303,16 +311,8 @@ internal class Pvt(private val args: Args = Args.default()) {
 
     private companion object {
         private const val TAG = "PVT"
-        private const val ONE_SECOND: Long = 1000
         private const val LOG_STATE_TRANSITIONS: Boolean = false
         private val INIT_STATE = Instructions()
-
-        private const val DEFAULT_STIMULUS_COUNT = 3
-        private const val DEFAULT_MIN_INTERVAL = 2 * ONE_SECOND
-        private const val DEFAULT_MAX_INTERVAL = 4 * ONE_SECOND
-        private const val DEFAULT_COUNTDOWN_TIME = 3 * ONE_SECOND
-        private const val DEFAULT_STIMULUS_TIMEOUT = 10 * ONE_SECOND
-        private const val DEFAULT_POST_RESPONSE_DELAY = 2 * ONE_SECOND
     }
 
     internal data class Result(
@@ -321,42 +321,4 @@ internal class Pvt(private val args: Args = Args.default()) {
         val interval: Long,
         val reactionDelay: Long
         )
-
-    internal data class Args(
-        var stimulusCount: Int = DEFAULT_STIMULUS_COUNT,
-        var minInterval: Long = DEFAULT_MIN_INTERVAL,
-        var maxInterval: Long = DEFAULT_MAX_INTERVAL,
-        var countDownTime: Long = DEFAULT_COUNTDOWN_TIME,
-        var stimulusTimeout: Long = DEFAULT_STIMULUS_TIMEOUT,
-        var postResponseDelay: Long = DEFAULT_POST_RESPONSE_DELAY,
-    ) {
-        constructor(
-            stimulusCount: Int? = null,
-            minInterval: Long? = null,
-            maxInterval: Long? = null,
-            countDownTime: Long? = null,
-            stimulusTimeout: Long? = null,
-            postResponseDelay: Long? = null
-        ) : this(
-            stimulusCount ?: DEFAULT_STIMULUS_COUNT,
-            minInterval ?: DEFAULT_MIN_INTERVAL,
-            maxInterval ?: DEFAULT_MAX_INTERVAL,
-            countDownTime ?: DEFAULT_COUNTDOWN_TIME,
-            stimulusTimeout ?: DEFAULT_STIMULUS_TIMEOUT,
-            postResponseDelay ?: DEFAULT_POST_RESPONSE_DELAY
-        )
-
-        companion object {
-            fun default(): Args {
-                return Args(
-                    DEFAULT_STIMULUS_COUNT,
-                    DEFAULT_MIN_INTERVAL,
-                    DEFAULT_MAX_INTERVAL,
-                    DEFAULT_COUNTDOWN_TIME,
-                    DEFAULT_STIMULUS_TIMEOUT,
-                    DEFAULT_POST_RESPONSE_DELAY
-                )
-            }
-        }
-    }
 }
