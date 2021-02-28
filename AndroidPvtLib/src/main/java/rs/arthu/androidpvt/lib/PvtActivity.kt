@@ -4,9 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.MotionEvent
-import android.view.View
 import androidx.lifecycle.ViewModelProvider
 import rs.arthu.androidpvt.lib.databinding.ActivityPvtBinding
 
@@ -31,12 +29,15 @@ class PvtActivity : AppCompatActivity() {
         val view = binding.root
         setContentView(view)
 
+        initViewModel()
+    }
+
+    private fun initViewModel() {
         val intentExtras = intent.extras
         val pvtArgs = Args.fromBundle(intentExtras)
 
         viewModelFactory = PvtViewModelFactory(pvtArgs)
         viewModel = ViewModelProvider(this, viewModelFactory).get(PvtViewModel::class.java)
-
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
@@ -45,12 +46,12 @@ class PvtActivity : AppCompatActivity() {
         return viewModel.handleOnTouchEvent(event)
     }
 
-    private fun updateCountdown(millisElapsed: Long) {
-        binding.textViewCountdown.text = (millisElapsed / 1000).toString()
+    private fun updateCountdown(millisElapsed: String) {
+        binding.textViewSub.text = millisElapsed
     }
 
-    private fun updateReactionDelay(millisElapsed: Long) {
-        binding.textViewMessage.text = getString(R.string.reaction_delay, millisElapsed)
+    private fun updateReactionDelay(millisElapsed: String) {
+        binding.textViewMain.text = getString(R.string.reaction_delay, millisElapsed)
     }
 
     class Builder {
@@ -66,9 +67,9 @@ class PvtActivity : AppCompatActivity() {
             return this
         }
 
-        fun withInterval(minInterval: Long, maxInterval: Long): Builder {
-            this.minInterval = minInterval
-            this.maxInterval = maxInterval
+        fun withInterval(min: Long, max: Long): Builder {
+            this.minInterval = min
+            this.maxInterval = max
             return this
         }
 
@@ -116,9 +117,5 @@ class PvtActivity : AppCompatActivity() {
 
             return intent
         }
-    }
-
-    companion object {
-        private const val TAG = "PvtNew"
     }
 }

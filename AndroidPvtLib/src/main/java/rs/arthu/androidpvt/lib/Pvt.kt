@@ -19,11 +19,11 @@ internal const val DEFAULT_POST_RESPONSE_DELAY = 2 * ONE_SECOND
 internal class Pvt(private val args: Args = Args.default()) {
 
     private var remainingTestCount = args.stimulusCount
-    private var listener: PvtListener? = null
+    private var listener: Listener? = null
     private var curJob: Job? = null
     private val results: MutableList<Result> = mutableListOf()
 
-    private var curState by Delegates.observable<PvtState>(INIT_STATE, {
+    private var curState by Delegates.observable<State>(INIT_STATE, {
             _, oldState, newState -> if (LOG_STATE_TRANSITIONS) {
             Log.d(TAG, "transition ($oldState -> $newState)")
         }
@@ -100,27 +100,24 @@ internal class Pvt(private val args: Args = Args.default()) {
 
     private suspend fun runCountdown() {
         curState = curState.consumeAction(Action.StartCountdown)
-
-        withContext(Main) { listener?.onStartCountdown() }
+        notifyStateChange(curState)
 
         (args.countDownTime downTo ONE_SECOND step ONE_SECOND).forEach { i ->
             withContext(Main) { listener?.onCountdownUpdate(i) }
             delay(ONE_SECOND)
         }
-
-        withContext(Main) { listener?.onFinishCountdown() }
     }
 
     private suspend fun runInterval(delay: Long) {
         curState = curState.consumeAction(Action.StartInterval)
-        withContext(Main) { listener?.onIntervalShowing() }
+        notifyStateChange(curState)
 
         delay(delay)
     }
 
     private suspend fun runStimulus(startTimestamp: Long, interval: Long): Result? {
         curState = curState.consumeAction(Action.ShowStimulus)
-        withContext(Main) { listener?.onStimulusShowing() }
+        notifyStateChange(curState)
 
         while (timeSinceCalled(startTimestamp) < args.stimulusTimeout) {
             if (curState is ValidReaction) {
@@ -132,8 +129,7 @@ internal class Pvt(private val args: Args = Args.default()) {
             }
         }
 
-        withContext(Main) { listener?.onStimulusHidden() }
-        return null
+        return null // returning null as test timed out, no result created
     }
 
     private suspend fun handleValidReaction(startTimestamp: Long, interval: Long): Result {
@@ -146,13 +142,12 @@ internal class Pvt(private val args: Args = Args.default()) {
         withContext(Main) { listener?.onReactionDelayUpdate(reactionDelay) }
 
         delay(args.postResponseDelay)
-        withContext(Main) { listener?.onStimulusHidden() }
         return Result(remainingTestCount, startTimestamp, interval, reactionDelay)
     }
 
     private suspend fun handleInvalidReaction() {
         curState = curState.consumeAction(Action.InvalidReaction)
-        withContext(Main) { listener?.onInvalidReaction() }
+        notifyStateChange(curState)
 
         delay(args.postResponseDelay)
 
@@ -161,12 +156,12 @@ internal class Pvt(private val args: Args = Args.default()) {
 
     private suspend fun handleCompletePvt() {
         curState = curState.consumeAction(Action.Complete)
-        withContext(Main) { listener?.onCompleteTest() }
+        notifyStateChange(curState)
 
         delay(args.postResponseDelay)
 
         withContext(Main) {
-            listener?.onResults(results.toJson())
+            listener?.onCompleteTest(results.toJson())
         }
     }
 
@@ -182,8 +177,8 @@ internal class Pvt(private val args: Args = Args.default()) {
 
     private fun <T> MutableList<T>.toJson(): String = Gson().toJson(this)
 
-    private class Instructions : PvtState {
-        override fun consumeAction(action: Action): PvtState {
+    internal class Instructions : State {
+        override fun consumeAction(action: Action): State {
             return when (action) {
                 is Action.StartCountdown -> Countdown()
                 is Action.Restart -> INIT_STATE
@@ -192,8 +187,8 @@ internal class Pvt(private val args: Args = Args.default()) {
         }
     }
 
-    private class Countdown : PvtState {
-        override fun consumeAction(action: Action): PvtState {
+    internal class Countdown : State {
+        override fun consumeAction(action: Action): State {
             return when (action) {
                 is Action.StartInterval -> Interval()
                 is Action.Restart -> INIT_STATE
@@ -202,8 +197,8 @@ internal class Pvt(private val args: Args = Args.default()) {
         }
     }
 
-    private class Interval : PvtState {
-        override fun consumeAction(action: Action): PvtState {
+    internal class Interval : State {
+        override fun consumeAction(action: Action): State {
             return when (action) {
                 is Action.ShowStimulus -> StimulusShowing()
                 is Action.InvalidReaction -> InvalidReaction()
@@ -213,8 +208,8 @@ internal class Pvt(private val args: Args = Args.default()) {
         }
     }
 
-    private class StimulusShowing : PvtState {
-        override fun consumeAction(action: Action): PvtState {
+    internal class StimulusShowing : State {
+        override fun consumeAction(action: Action): State {
             return when (action) {
                 is Action.ValidReaction -> ValidReaction(action.reactionDelay)
                 is Action.InvalidReaction -> InvalidReaction()
@@ -224,8 +219,8 @@ internal class Pvt(private val args: Args = Args.default()) {
         }
     }
 
-    private class ValidReaction(val reactionDelay: Long) : PvtState {
-        override fun consumeAction(action: Action): PvtState {
+    internal class ValidReaction(val reactionDelay: Long) : State {
+        override fun consumeAction(action: Action): State {
             return when (action) {
                 is Action.StartInterval -> Interval()
                 is Action.Complete -> Complete()
@@ -235,8 +230,8 @@ internal class Pvt(private val args: Args = Args.default()) {
         }
     }
 
-    private class InvalidReaction : PvtState {
-        override fun consumeAction(action: Action): PvtState {
+    internal class InvalidReaction : State {
+        override fun consumeAction(action: Action): State {
             return when (action) {
                 is Action.StartInterval -> Interval()
                 is Action.Restart -> INIT_STATE
@@ -245,8 +240,8 @@ internal class Pvt(private val args: Args = Args.default()) {
         }
     }
 
-    private class Complete : PvtState {
-        override fun consumeAction(action: Action): PvtState {
+    internal class Complete : State {
+        override fun consumeAction(action: Action): State {
             return when (action) {
                 is Action.Restart -> INIT_STATE
                 else -> this
@@ -254,7 +249,7 @@ internal class Pvt(private val args: Args = Args.default()) {
         }
     }
 
-    sealed class Action {
+    internal sealed class Action {
         object Restart : Action()
         object StartCountdown : Action()
         object StartInterval : Action()
@@ -264,54 +259,31 @@ internal class Pvt(private val args: Args = Args.default()) {
         object Complete : Action()
     }
 
-    interface PvtState {
-        fun consumeAction(action: Action): PvtState
+    internal interface State {
+        fun consumeAction(action: Action): State
     }
 
-    interface PvtListener {
-        fun onStartCountdown() = Unit
+    interface Listener {
+        fun onStateUpdate(newState: State) = Unit
         fun onCountdownUpdate(millisElapsed: Long) = Unit
-        fun onFinishCountdown() = Unit
-        fun onIntervalShowing() = Unit
-        fun onStimulusShowing() = Unit
-        fun onInvalidReaction() = Unit
         fun onReactionDelayUpdate(millisElapsed: Long) = Unit
-        fun onStimulusHidden() = Unit
-        fun onResults(resultsJson: String)
-        fun onCompleteTest() = Unit
+        fun onCompleteTest(jsonResults: String) = Unit
     }
 
-    fun setListener(
-        onStartCountdown: () -> Unit = {},
-        onCountdownUpdate: (millisElapsed: Long) -> Unit = {},
-        onFinishCountdown: () -> Unit = {},
-        onIntervalShowing: () -> Unit = {},
-        onStimulusShowing: () -> Unit = {},
-        onInvalidReaction: () -> Unit = {},
-        onReactionDelayUpdate: (millisElapsed: Long) -> Unit = {},
-        onStimulusHidden: () -> Unit = {},
-        onCompleteTest: () -> Unit = {},
-        onResults: (resultsJson: String) -> Unit = {}
-    ) {
-        listener = object : PvtListener {
-            override fun onStartCountdown() = onStartCountdown()
-            override fun onCountdownUpdate(millisElapsed: Long) =
-                onCountdownUpdate(millisElapsed)
-            override fun onFinishCountdown() = onFinishCountdown()
-            override fun onIntervalShowing() = onIntervalShowing()
-            override fun onStimulusShowing() = onStimulusShowing()
-            override fun onInvalidReaction() = onInvalidReaction()
-            override fun onReactionDelayUpdate(millisElapsed: Long) =
-                onReactionDelayUpdate(millisElapsed)
-            override fun onStimulusHidden() = onStimulusHidden()
-            override fun onCompleteTest() = onCompleteTest()
-            override fun onResults(resultsJson: String) = onResults(resultsJson)
+    internal fun setListener(listener: Listener) {
+        this.listener = listener
+    }
+
+    private suspend fun notifyStateChange(newState: State) {
+        withContext(Main) {
+            listener?.onStateUpdate(newState)
         }
     }
 
     private companion object {
         private const val TAG = "PVT"
-        private const val LOG_STATE_TRANSITIONS: Boolean = false
+        private const val LOG_STATE_TRANSITIONS: Boolean = true
         private val INIT_STATE = Instructions()
     }
+
 }
