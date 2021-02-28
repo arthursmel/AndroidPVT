@@ -32,7 +32,7 @@ class PvtActivity : AppCompatActivity() {
         setContentView(view)
 
         val intentExtras = intent.extras
-        val pvtArgs = PvtArgs.fromBundle(intentExtras)
+        val pvtArgs = Args.fromBundle(intentExtras)
 
         viewModelFactory = PvtViewModelFactory(pvtArgs)
         viewModel = ViewModelProvider(this, viewModelFactory).get(PvtViewModel::class.java)

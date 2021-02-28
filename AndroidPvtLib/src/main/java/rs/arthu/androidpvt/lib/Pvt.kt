@@ -16,7 +16,7 @@ internal const val DEFAULT_COUNTDOWN_TIME = 3 * ONE_SECOND
 internal const val DEFAULT_STIMULUS_TIMEOUT = 10 * ONE_SECOND
 internal const val DEFAULT_POST_RESPONSE_DELAY = 2 * ONE_SECOND
 
-internal class Pvt(private val args: PvtArgs = PvtArgs.default()) {
+internal class Pvt(private val args: Args = Args.default()) {
 
     private var remainingTestCount = args.stimulusCount
     private var listener: PvtListener? = null
@@ -314,11 +314,4 @@ internal class Pvt(private val args: PvtArgs = PvtArgs.default()) {
         private const val LOG_STATE_TRANSITIONS: Boolean = false
         private val INIT_STATE = Instructions()
     }
-
-    internal data class Result(
-        val testNumber: Int,
-        val timestamp: Long,
-        val interval: Long,
-        val reactionDelay: Long
-        )
 }

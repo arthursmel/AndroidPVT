@@ -2,7 +2,7 @@ package rs.arthu.androidpvt.lib
 
 import android.os.Bundle
 
-internal class PvtArgs(
+internal class Args(
     var stimulusCount: Int = DEFAULT_STIMULUS_COUNT,
     var minInterval: Long = DEFAULT_MIN_INTERVAL,
     var maxInterval: Long = DEFAULT_MAX_INTERVAL,
@@ -28,8 +28,8 @@ internal class PvtArgs(
     )
 
     companion object {
-        fun default(): PvtArgs {
-            return PvtArgs(
+        fun default(): Args {
+            return Args(
                     DEFAULT_STIMULUS_COUNT,
                     DEFAULT_MIN_INTERVAL,
                     DEFAULT_MAX_INTERVAL,
@@ -39,7 +39,7 @@ internal class PvtArgs(
             )
         }
 
-        fun fromBundle(bundle: Bundle?): PvtArgs {
+        fun fromBundle(bundle: Bundle?): Args {
             if (bundle == null) return default()
 
             val keySet = bundle.keySet()
@@ -75,7 +75,7 @@ internal class PvtArgs(
                 postResponseDelay = bundle.getLong(POST_RESPONSE_DELAY)
             }
 
-            return PvtArgs(
+            return Args(
                     stimulusCount,
                     minInterval,
                     maxInterval,

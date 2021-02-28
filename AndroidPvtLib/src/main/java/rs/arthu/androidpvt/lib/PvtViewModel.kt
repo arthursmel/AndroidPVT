@@ -3,7 +3,7 @@ package rs.arthu.androidpvt.lib;
 import android.view.MotionEvent
 import androidx.lifecycle.ViewModel
 
-internal class PvtViewModel(args: PvtArgs) : ViewModel(){
+internal class PvtViewModel(args: Args) : ViewModel(){
 
     private var pvt: Pvt = Pvt(args)
 
