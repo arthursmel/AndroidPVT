@@ -1,19 +1,11 @@
 package rs.arthu.androidpvt.lib;
 
-import android.os.Bundle
-import android.util.Log
 import android.view.MotionEvent
 import androidx.lifecycle.ViewModel
 
-internal class PvtViewModel(private val args: PvtArgs) : ViewModel(){
+internal class PvtViewModel(args: PvtArgs) : ViewModel(){
 
-    private var pvt: Pvt
-
-    init {
-        Log.d("PvtViewModel", "viewmodel created")
-
-        pvt = Pvt()
-    }
+    private var pvt: Pvt = Pvt(args)
 
     internal fun handleOnTouchEvent(event: MotionEvent?): Boolean {
         if (event?.action == MotionEvent.ACTION_DOWN) {
@@ -26,7 +18,5 @@ internal class PvtViewModel(private val args: PvtArgs) : ViewModel(){
     override fun onCleared() {
         super.onCleared()
         pvt.cancel()
-        Log.d("PvtViewModel", "oncleared")
     }
-
 }
