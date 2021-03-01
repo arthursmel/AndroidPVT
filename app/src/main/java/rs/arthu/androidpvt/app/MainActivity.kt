@@ -26,9 +26,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun startPvtActivity() {
         val pvtActivityIntent = PvtActivity.Builder()
-            .withStimulusCount(4)
-            .withCountdownTime(3)
-            .withInterval(2 * 1000, 4 * 1000)
+            .withStimulusCount(3)
+            .withCountdownTime(3 * 1000) // 3 second countdown
+            .withInterval(2 * 1000, 4 * 1000) // random interval between 2 and 4 seconds duration
             .withPostResponseDelay(2 * 1000)
             .withStimulusTimeout(10 * 1000)
             .build(this)
@@ -51,8 +51,7 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, jsonResults, Toast.LENGTH_LONG).show()
     }
 
-    companion object {
-        private const val TAG = "MainActivity"
+    private companion object {
         private const val PVT_REQUEST = 1
     }
 }

@@ -20,12 +20,14 @@ internal class Pvt(private val args: Args = Args.default()) {
 
     private var remainingTestCount = args.stimulusCount
     private var listener: Listener? = null
+    private var stimulusListener: StimulusListener? = null
     private var curJob: Job? = null
     private val results: MutableList<Result> = mutableListOf()
 
     private var curState by Delegates.observable<State>(INIT_STATE, {
             _, oldState, newState -> if (LOG_STATE_TRANSITIONS) {
             Log.d(TAG, "transition ($oldState -> $newState)")
+            notifyStateChange(newState)
         }
     })
 
@@ -82,7 +84,12 @@ internal class Pvt(private val args: Args = Args.default()) {
             val intervalDelay = getRandomIntervalDelay()
             runInterval(intervalDelay)
 
+            withContext(Main) {
+                stimulusListener?.onStimulus()
+            }
+
             val result = runStimulus(System.currentTimeMillis(), intervalDelay)
+
             results.addSafe(result)
 
             runNextTest(result)
@@ -100,24 +107,23 @@ internal class Pvt(private val args: Args = Args.default()) {
 
     private suspend fun runCountdown() {
         curState = curState.consumeAction(Action.StartCountdown)
-        notifyStateChange(curState)
 
         (args.countDownTime downTo ONE_SECOND step ONE_SECOND).forEach { i ->
-            withContext(Main) { listener?.onCountdownUpdate(i) }
+            withContext(Main) {
+                listener?.onCountdownUpdate(i)
+            }
             delay(ONE_SECOND)
         }
     }
 
     private suspend fun runInterval(delay: Long) {
         curState = curState.consumeAction(Action.StartInterval)
-        notifyStateChange(curState)
 
         delay(delay)
     }
 
     private suspend fun runStimulus(startTimestamp: Long, interval: Long): Result? {
         curState = curState.consumeAction(Action.ShowStimulus)
-        notifyStateChange(curState)
 
         while (timeSinceCalled(startTimestamp) < args.stimulusTimeout) {
             if (curState is ValidReaction) {
@@ -147,7 +153,6 @@ internal class Pvt(private val args: Args = Args.default()) {
 
     private suspend fun handleInvalidReaction() {
         curState = curState.consumeAction(Action.InvalidReaction)
-        notifyStateChange(curState)
 
         delay(args.postResponseDelay)
 
@@ -156,7 +161,6 @@ internal class Pvt(private val args: Args = Args.default()) {
 
     private suspend fun handleCompletePvt() {
         curState = curState.consumeAction(Action.Complete)
-        notifyStateChange(curState)
 
         delay(args.postResponseDelay)
 
@@ -270,12 +274,20 @@ internal class Pvt(private val args: Args = Args.default()) {
         fun onCompleteTest(jsonResults: String) = Unit
     }
 
+    interface StimulusListener {
+        fun onStimulus() = Unit
+    }
+
     internal fun setListener(listener: Listener) {
         this.listener = listener
     }
 
-    private suspend fun notifyStateChange(newState: State) {
-        withContext(Main) {
+    internal fun setStimulusListener(listener: StimulusListener) {
+        stimulusListener = listener
+    }
+
+    private fun notifyStateChange(newState: State) {
+        CoroutineScope(Main).launch {
             listener?.onStateUpdate(newState)
         }
     }

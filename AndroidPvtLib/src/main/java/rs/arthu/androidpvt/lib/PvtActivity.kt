@@ -4,7 +4,10 @@ import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.MotionEvent
+import android.view.View
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import rs.arthu.androidpvt.lib.databinding.ActivityPvtBinding
 
@@ -16,7 +19,7 @@ internal const val COUNTDOWN_TIME = "countdownTime"
 internal const val STIMULUS_TIMEOUT = "stimulusTimeout"
 internal const val POST_RESPONSE_DELAY = "postResponseDelay"
 
-class PvtActivity : AppCompatActivity() {
+class PvtActivity : AppCompatActivity(), Pvt.StimulusListener {
 
     private lateinit var binding: ActivityPvtBinding
     private lateinit var viewModel: PvtViewModel
@@ -38,20 +41,103 @@ class PvtActivity : AppCompatActivity() {
 
         viewModelFactory = PvtViewModelFactory(pvtArgs)
         viewModel = ViewModelProvider(this, viewModelFactory).get(PvtViewModel::class.java)
+        viewModel.pvt.setStimulusListener(this)
+
+        viewModel.countdown.observe(this, {
+            updateCountdown(it)
+        })
+
+        viewModel.reactionDelay.observe(this, {
+            updateReactionDelay(it)
+        })
+
+        viewModel.results.observe(this, {
+            Log.d("MainActivity", it)
+            returnResults(it)
+        })
+
+        viewModel.pvtState.observe(this, stateObserver)
+    }
+
+    private val stateObserver = Observer<Pvt.State> {
+        when (it) {
+            is Pvt.Instructions -> displayInstructions()
+            is Pvt.Countdown -> displayCountdown()
+            is Pvt.Interval -> displayInterval()
+            is Pvt.StimulusShowing -> {}
+            is Pvt.InvalidReaction -> displayInvalidReaction()
+            is Pvt.ValidReaction -> {}
+            is Pvt.Complete -> displayComplete()
+            else -> throw IllegalStateException()
+        }
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         super.onTouchEvent(event)
 
-        return viewModel.handleOnTouchEvent(event)
+        if (event?.action == MotionEvent.ACTION_DOWN) {
+            viewModel.pvt.handleActionDownTouchEvent()
+        }
+
+        return true
     }
 
     private fun updateCountdown(millisElapsed: String) {
+        Log.d("MainActivity", millisElapsed)
         binding.textViewSub.text = millisElapsed
     }
 
     private fun updateReactionDelay(millisElapsed: String) {
         binding.textViewMain.text = getString(R.string.reaction_delay, millisElapsed)
+    }
+
+    private fun displayInstructions() {
+        Log.d("MainActivity", "Instructions")
+    }
+
+    private fun displayCountdown() {
+        binding.viewStimulus.visibility = View.GONE
+
+        binding.textViewSub.visibility = View.VISIBLE
+        binding.textViewMain.text = getString(R.string.ready_message)
+        binding.textViewMain.visibility = View.VISIBLE
+    }
+
+    private fun displayInterval() {
+        binding.textViewMain.text = ""
+        binding.textViewMain.visibility = View.GONE
+
+        binding.textViewSub.text = ""
+        binding.textViewSub.visibility = View.GONE
+
+        binding.viewStimulus.visibility = View.GONE
+    }
+
+    override fun onStimulus() {
+        Log.d("MainActivity", "onStimulus")
+        binding.viewStimulus.visibility = View.VISIBLE
+        binding.textViewMain.visibility = View.VISIBLE
+    }
+
+    private fun displayInvalidReaction() {
+        binding.viewStimulus.visibility = View.GONE
+
+        binding.textViewMain.text = getString(R.string.invalid_reaction)
+        binding.textViewMain.visibility = View.VISIBLE
+    }
+
+    private fun displayComplete() {
+        binding.viewStimulus.visibility = View.GONE
+
+        binding.textViewMain.visibility = View.VISIBLE
+        binding.textViewMain.text = getString(R.string.test_complete)
+    }
+
+    private fun returnResults(jsonResults: String) {
+        val returnIntent = Intent()
+        returnIntent.putExtra(PVT_RESULTS_KEY, jsonResults)
+        setResult(RESULT_OK, returnIntent)
+        finish()
     }
 
     class Builder {
