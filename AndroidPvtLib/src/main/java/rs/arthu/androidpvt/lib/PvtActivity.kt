@@ -76,6 +76,7 @@ class PvtActivity : AppCompatActivity(), Pvt.StimulusListener {
         super.onTouchEvent(event)
 
         if (event?.action == MotionEvent.ACTION_DOWN) {
+            // Shortcutting the viewmodel, directly sending touch event to pvt
             viewModel.pvt.handleActionDownTouchEvent()
         }
 

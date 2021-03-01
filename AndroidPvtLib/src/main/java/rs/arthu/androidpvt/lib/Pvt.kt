@@ -268,14 +268,14 @@ internal class Pvt(private val args: Args = Args.default()) {
         fun consumeAction(action: Action): State
     }
 
-    interface Listener {
+    internal interface Listener {
         fun onStateUpdate(newState: State) = Unit
         fun onCountdownUpdate(millisElapsed: Long) = Unit
         fun onReactionDelayUpdate(millisElapsed: Long) = Unit
         fun onCompleteTest(jsonResults: String) = Unit
     }
 
-    interface StimulusListener {
+    internal interface StimulusListener {
         fun onStimulus() = Unit
     }
 
