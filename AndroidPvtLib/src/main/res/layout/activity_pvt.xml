@@ -25,7 +25,7 @@
         android:padding="16dp"
         android:textSize="10pt"
         android:layout_centerInParent="true"
-        android:text="@string/pvt_instructions" />
+        android:text="@string/instructions" />
 
     <TextView
         android:id="@+id/textViewSub"

@@ -18,9 +18,12 @@ internal const val DEFAULT_POST_RESPONSE_DELAY = 2 * ONE_SECOND
 
 internal class Pvt(private val args: Args = Args.default()) {
 
-    private var remainingTestCount = args.stimulusCount
     private var listener: Listener? = null
     private var stimulusListener: StimulusListener? = null
+    // Stimulus listener is used to shortcut the view model
+    // to improve performance showing the stimulus to the user
+
+    private var remainingTestCount = args.stimulusCount
     private var curJob: Job? = null
     private val results: MutableList<Result> = mutableListOf()
 
@@ -87,7 +90,6 @@ internal class Pvt(private val args: Args = Args.default()) {
             withContext(Main) {
                 stimulusListener?.onStimulus()
             }
-
             val result = runStimulus(System.currentTimeMillis(), intervalDelay)
 
             results.addSafe(result)
@@ -118,7 +120,6 @@ internal class Pvt(private val args: Args = Args.default()) {
 
     private suspend fun runInterval(delay: Long) {
         curState = curState.consumeAction(Action.StartInterval)
-
         delay(delay)
     }
 

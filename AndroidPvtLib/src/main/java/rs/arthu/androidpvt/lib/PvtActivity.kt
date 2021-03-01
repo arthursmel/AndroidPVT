@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import androidx.lifecycle.Observer
@@ -63,7 +62,9 @@ class PvtActivity : AppCompatActivity(), Pvt.StimulusListener {
             is Pvt.Instructions -> displayInstructions()
             is Pvt.Countdown -> displayCountdown()
             is Pvt.Interval -> displayInterval()
-            is Pvt.StimulusShowing -> {}
+            is Pvt.StimulusShowing -> {} // Stimulus listener handles
+            // state change here, otherwise time taken to show stimulus
+            // affects result significantly
             is Pvt.InvalidReaction -> displayInvalidReaction()
             is Pvt.ValidReaction -> {}
             is Pvt.Complete -> displayComplete()
@@ -90,7 +91,13 @@ class PvtActivity : AppCompatActivity(), Pvt.StimulusListener {
     }
 
     private fun displayInstructions() {
-        Log.d("MainActivity", "Instructions")
+        binding.viewStimulus.visibility = View.GONE
+
+        binding.textViewMain.visibility = View.VISIBLE
+        binding.textViewMain.text = getString(R.string.instructions)
+
+        binding.textViewSub.visibility = View.GONE
+        binding.textViewSub.text = ""
     }
 
     private fun displayCountdown() {
