@@ -3,10 +3,9 @@ package rs.arthu.androidpvt.app
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
-import rs.arthu.androidpvt.lib.PvtActivity.Companion.NUMBER_OF_STIMULUS_KEY
 import rs.arthu.androidpvt.app.databinding.ActivityMainBinding
+import rs.arthu.androidpvt.lib.PVT_RESULTS_KEY
 import rs.arthu.androidpvt.lib.PvtActivity
 
 class MainActivity : AppCompatActivity() {
@@ -26,9 +25,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startPvtActivity() {
-        val intent = Intent(this, PvtActivity::class.java)
-        intent.putExtra(NUMBER_OF_STIMULUS_KEY, 3)
-        startActivityForResult(intent, PVT_REQUEST)
+        val pvtActivityIntent = PvtActivity.Builder()
+            .withStimulusCount(3)
+            .withCountdownTime(3 * 1000) // 3 second countdown
+            .withInterval(2 * 1000, 4 * 1000) // random interval between 2 and 4 seconds duration
+            .withPostResponseDelay(2 * 1000)
+            .withStimulusTimeout(10 * 1000)
+            .build(this)
+
+        startActivityForResult(pvtActivityIntent, PVT_REQUEST)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -38,19 +43,15 @@ class MainActivity : AppCompatActivity() {
 
         val jsonResults: String? = when (requestCode) {
             PVT_REQUEST -> {
-                data?.getStringExtra(PvtActivity.PVT_RESULTS_KEY)
+                data?.getStringExtra(PVT_RESULTS_KEY)
             }
-            else -> {
-                "No results"
-            }
+            else -> "No results"
         }
 
         Toast.makeText(this, jsonResults, Toast.LENGTH_LONG).show()
-        Log.d(TAG, jsonResults!!)
     }
 
-    companion object {
-        private const val TAG = "MainActivity"
+    private companion object {
         private const val PVT_REQUEST = 1
     }
 }

@@ -1,7 +1,7 @@
 <resources>
-    <string name="pvt_instructions">When each stimulus appears, press anywhere on the screen as fast as you can. Your response time will then be shown in 100ths of a second.\nTouch the screen to start.</string>
-    <string name="ready_message">Get ready to start</string>
+    <string name="instructions">When the display goes RED, press on the screen as quickly as you are able. Your response time will then be shown in millseconds.\nTouch  screen to start the test.</string>
+    <string name="ready_message">Prepare to start</string>
     <string name="test_complete">Test complete</string>
     <string name="invalid_reaction">Invalid reaction</string>
-    <string name="reaction_delay">%1$dms</string>
+    <string name="reaction_delay">%1$sms</string>
 </resources>
