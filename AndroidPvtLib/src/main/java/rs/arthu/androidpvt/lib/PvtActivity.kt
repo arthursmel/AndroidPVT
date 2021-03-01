@@ -52,7 +52,6 @@ class PvtActivity : AppCompatActivity(), Pvt.StimulusListener {
         })
 
         viewModel.results.observe(this, {
-            Log.d("MainActivity", it)
             returnResults(it)
         })
 
@@ -83,7 +82,6 @@ class PvtActivity : AppCompatActivity(), Pvt.StimulusListener {
     }
 
     private fun updateCountdown(millisElapsed: String) {
-        Log.d("MainActivity", millisElapsed)
         binding.textViewSub.text = millisElapsed
     }
 
@@ -114,7 +112,6 @@ class PvtActivity : AppCompatActivity(), Pvt.StimulusListener {
     }
 
     override fun onStimulus() {
-        Log.d("MainActivity", "onStimulus")
         binding.viewStimulus.visibility = View.VISIBLE
         binding.textViewMain.visibility = View.VISIBLE
     }

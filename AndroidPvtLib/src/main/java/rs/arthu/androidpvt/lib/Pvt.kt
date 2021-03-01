@@ -294,7 +294,7 @@ internal class Pvt(private val args: Args = Args.default()) {
 
     private companion object {
         private const val TAG = "PVT"
-        private const val LOG_STATE_TRANSITIONS: Boolean = true
+        private const val LOG_STATE_TRANSITIONS: Boolean = false
         private val INIT_STATE = Instructions()
     }
 
