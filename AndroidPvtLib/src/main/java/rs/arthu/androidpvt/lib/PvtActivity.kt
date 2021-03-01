@@ -103,9 +103,10 @@ class PvtActivity : AppCompatActivity(), Pvt.StimulusListener {
     private fun displayCountdown() {
         binding.viewStimulus.visibility = View.GONE
 
-        binding.textViewSub.visibility = View.VISIBLE
         binding.textViewMain.text = getString(R.string.ready_message)
         binding.textViewMain.visibility = View.VISIBLE
+
+        binding.textViewSub.visibility = View.VISIBLE
     }
 
     private fun displayInterval() {

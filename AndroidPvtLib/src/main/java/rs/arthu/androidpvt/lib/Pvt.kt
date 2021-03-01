@@ -30,8 +30,8 @@ internal class Pvt(private val args: Args = Args.default()) {
     private var curState by Delegates.observable<State>(INIT_STATE, {
             _, oldState, newState -> if (LOG_STATE_TRANSITIONS) {
             Log.d(TAG, "transition ($oldState -> $newState)")
-            notifyStateChange(newState)
         }
+        notifyStateChange(newState)
     })
 
     fun handleActionDownTouchEvent() {

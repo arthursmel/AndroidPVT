@@ -1,5 +1,5 @@
 <resources>
-    <string name="instructions">When a stimulus appears, press on the screen as quickly as you are able. Your response time will then be shown in millseconds.\nTouch  screen to start the test.</string>
+    <string name="instructions">When the display goes RED, press on the screen as quickly as you are able. Your response time will then be shown in millseconds.\nTouch  screen to start the test.</string>
     <string name="ready_message">Prepare to start</string>
     <string name="test_complete">Test complete</string>
     <string name="invalid_reaction">Invalid reaction</string>
