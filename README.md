@@ -5,7 +5,7 @@ A psychomotor vigilance task (PVT) for Android.
 [![arthursmel](https://circleci.com/gh/arthursmel/AndroidPvt.svg?style=svg)](https://app.circleci.com/pipelines/github/arthursmel/AndroidPvt) [![Maven Central](https://img.shields.io/maven-central/v/rs.arthu/androidpvt.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22rs.arthu%22%20AND%20a:%22androidpvt%22)
 
 # Installation
-`implementation("rs.arthu:androidpvt:1.0.0")`
+`implementation("rs.arthu:androidpvt:1.1.0")`
 
 # Usage
 Create an Intent using the Builder.
