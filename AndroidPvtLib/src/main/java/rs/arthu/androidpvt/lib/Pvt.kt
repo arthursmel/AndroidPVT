@@ -35,22 +35,20 @@ internal class Pvt(private val args: Args = Args.default()) {
     })
 
     fun handleActionDownTouchEvent() {
+        val reactionTimestamp = System.currentTimeMillis()
+
         when (curState) {
             is Instructions -> {
                 // Checking if job is null, otherwise if user quickly presses instructions
                 // multiple jobs may be run
                 if (curJob == null) {
-                    curJob = runTest(true, remainingTestCount)
+                    runTest()
                 }
             }
             is Interval -> {
-                CoroutineScope(Default).launch {
-                    curJob?.cancelAndJoin()
-                    handleInvalidReaction()
-                }
+                curState = curState.consumeAction(Action.InvalidReaction)
             }
             is StimulusShowing -> {
-                val reactionTimestamp = System.currentTimeMillis()
                 curState = curState.consumeAction(Action.ValidReaction(reactionTimestamp))
             }
             is Countdown, is InvalidReaction, is ValidReaction, is Complete -> {}
@@ -58,51 +56,91 @@ internal class Pvt(private val args: Args = Args.default()) {
         }
     }
 
-    internal fun restart() {
-        CoroutineScope(Default).launch {
-            curJob?.cancelAndJoin()
-
-            remainingTestCount = args.stimulusCount
-            curState = curState.consumeAction(Action.Restart)
-
-            curJob = runTest(true, remainingTestCount)
-        }
-    }
-
     internal fun cancel() {
         curJob?.cancel()
     }
 
-    private fun runTest(runCountdown: Boolean, remainingTestCount: Int): Job? {
-        return CoroutineScope(Default).launch {
-            if (remainingTestCount == 0) {
-                handleCompletePvt()
-                cancel()
+    private fun runTest() {
+        curJob = CoroutineScope(Default).launch {
+
+            runCountdown()
+
+            while (testsRemain() && !jobCancelled()) {
+                val intervalDelay = getRandomIntervalDelay()
+
+                runInterval(intervalDelay)
+
+                if (curState is InvalidReaction) {
+                    continue
+                }
+
+                withContext(Main) {
+                    stimulusListener?.onStimulus()
+                }
+
+                val startTimestamp = System.currentTimeMillis()
+                val result = runStimulus(
+                        startTimestamp,
+                        intervalDelay
+                )
+
+                delay(args.postResponseDelay)
+
+                if (result == null) {
+                    continue
+                } else {
+                    decrementRemainingTestCount()
+                    results.addSafe(result)
+                }
+
             }
 
-            if (runCountdown) runCountdown()
-            val intervalDelay = getRandomIntervalDelay()
-            runInterval(intervalDelay)
+            if (!testsRemain()) {
+                handleCompletePvt()
+            }
+        }
+    }
+
+    private fun testsRemain() : Boolean {
+        return remainingTestCount > 0
+    }
+
+    private fun decrementRemainingTestCount() {
+        remainingTestCount -= 1
+    }
+
+    private suspend fun runInterval(delay: Long) {
+        curState = curState.consumeAction(Action.StartInterval)
+        delay(delay)
+    }
+
+    private suspend fun runStimulus(startTimestamp: Long, interval: Long): Result? {
+        curState = curState.consumeAction(Action.ShowStimulus)
+
+        while (testHasNotTimedOut(startTimestamp) &&
+                !validReactionHasOccurred() &&
+                !jobCancelled()) {
 
             withContext(Main) {
-                stimulusListener?.onStimulus()
+                listener?.onReactionDelayUpdate(timeSinceCalled(startTimestamp))
             }
-            val result = runStimulus(System.currentTimeMillis(), intervalDelay)
-
-            results.addSafe(result)
-
-            runNextTest(result)
         }
-    }
 
-    private suspend fun runNextTest(result: Result?) {
-        if (result == null) {
-            handleInvalidReaction()
+        return if (curState is ValidReaction) {
+            handleValidReaction(startTimestamp, interval)
         } else {
-            remainingTestCount -= 1
-            curJob = runTest(false, remainingTestCount)
+            curState = curState.consumeAction(Action.InvalidReaction)
+            null // returning null as test timed out, no result created
         }
     }
+
+    private fun validReactionHasOccurred() = curState is ValidReaction
+
+    private fun testHasNotTimedOut(startTimestamp: Long) = timeSinceCalled(startTimestamp) < args.stimulusTimeout
+
+    private fun jobCancelled() = curJob?.isCancelled ?: true
+
+    private fun timeSinceCalled(startTimestamp: Long) = System.currentTimeMillis() - startTimestamp
 
     private suspend fun runCountdown() {
         curState = curState.consumeAction(Action.StartCountdown)
@@ -115,25 +153,14 @@ internal class Pvt(private val args: Args = Args.default()) {
         }
     }
 
-    private suspend fun runInterval(delay: Long) {
-        curState = curState.consumeAction(Action.StartInterval)
-        delay(delay)
-    }
+    private suspend fun handleCompletePvt() {
+        curState = curState.consumeAction(Action.Complete)
 
-    private suspend fun runStimulus(startTimestamp: Long, interval: Long): Result? {
-        curState = curState.consumeAction(Action.ShowStimulus)
+        delay(args.postResponseDelay)
 
-        while (timeSinceCalled(startTimestamp) < args.stimulusTimeout) {
-            if (curState is ValidReaction) {
-                return handleValidReaction(startTimestamp, interval)
-            }
-
-            withContext(Main) {
-                listener?.onReactionDelayUpdate(timeSinceCalled(startTimestamp))
-            }
+        withContext(Main) {
+            listener?.onCompleteTest(results.toJson())
         }
-
-        return null // returning null as test timed out, no result created
     }
 
     private suspend fun handleValidReaction(startTimestamp: Long, interval: Long): Result {
@@ -145,29 +172,13 @@ internal class Pvt(private val args: Args = Args.default()) {
         // and value displaced on screen for the post response delay
         withContext(Main) { listener?.onReactionDelayUpdate(reactionDelay) }
 
-        delay(args.postResponseDelay)
-        return Result(remainingTestCount, startTimestamp, interval, reactionDelay)
+        return Result(
+                remainingTestCount,
+                startTimestamp,
+                interval,
+                reactionDelay
+        )
     }
-
-    private suspend fun handleInvalidReaction() {
-        curState = curState.consumeAction(Action.InvalidReaction)
-
-        delay(args.postResponseDelay)
-
-        curJob = runTest(false, remainingTestCount)
-    }
-
-    private suspend fun handleCompletePvt() {
-        curState = curState.consumeAction(Action.Complete)
-
-        delay(args.postResponseDelay)
-
-        withContext(Main) {
-            listener?.onCompleteTest(results.toJson())
-        }
-    }
-
-    private fun timeSinceCalled(startTimestamp: Long) = System.currentTimeMillis() - startTimestamp
 
     private fun getRandomIntervalDelay(): Long = (args.minInterval..args.maxInterval).random()
 
