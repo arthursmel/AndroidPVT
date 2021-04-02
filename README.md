@@ -54,10 +54,10 @@ JSON format:
 ```json
 [
     {
-        "interval": <the random wait time before the stimulus is shown>,
-        "reactionDelay": <the time it took for the user to response to the stimulus>,
-        "testNumber": <the index of the test the user has completed>,
-        "timestamp": <timestamp of reaction>
+        "interval": "<the random wait time before the stimulus is shown>",
+        "reactionDelay": "<the time it took for the user to response to the stimulus>",
+        "testNumber": "<the index of the test the user has completed>",
+        "timestamp": "<timestamp of reaction>"
     }
 ]
 
