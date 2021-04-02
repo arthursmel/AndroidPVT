@@ -4,14 +4,14 @@ A psychomotor vigilance task (PVT) for Android.
 
 [![arthursmel](https://circleci.com/gh/arthursmel/AndroidPvt.svg?style=svg)](https://app.circleci.com/pipelines/github/arthursmel/AndroidPvt) [![Maven Central](https://img.shields.io/maven-central/v/rs.arthu/androidpvt.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22rs.arthu%22%20AND%20a:%22androidpvt%22)
 
-# Installation
-```
+## Installation
+```swift
 implementation("rs.arthu:androidpvt:1.1.0")
 ```
 
-# Usage
+## Usage
 Create an Intent using the Builder:
-```
+```swift
 val pvtActivityIntent = PvtActivity.Builder()
     .withStimulusCount(3) //
     .withCountdownTime(3 * 1000)
@@ -20,6 +20,12 @@ val pvtActivityIntent = PvtActivity.Builder()
     .withStimulusTimeout(10 * 1000)
     .build(this)
 ```
+
+Start the PvtActivity with a request code:
+```swift
+startActivityForResult(pvtActivityIntent, PVT_REQUEST)
+```
+
 Builder methods:
 
 method | description | Default Value
@@ -30,13 +36,9 @@ method | description | Default Value
 `.withStimulusTimeout(timeout: Long)` | The maximum duration a user can take to respond | 10000ms
 `.withPostResponseDelay(delay: Long)` | The time the user's response will be held on the screen for | 2000ms
 
-Start the PvtActivity with a request code:
-```
-startActivityForResult(pvtActivityIntent, PVT_REQUEST)
-```
 
 Results will then be returned in JSON format (for now)
-```
+```swift
 override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
     super.onActivityResult(requestCode, resultCode, data)
     if (resultCode != RESULT_OK) return
@@ -49,7 +51,7 @@ override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) 
 }
 ```
 JSON format:
-```
+```json
 [
     {
         "interval": <the random wait time before the stimulus is shown>,
@@ -61,5 +63,5 @@ JSON format:
 
 ```
 
-# References
+## References
 The behaviour of the PVT is inspired by [Android cognitive test battery](https://github.com/movisens/AndroidCognitiveTestBattery)
