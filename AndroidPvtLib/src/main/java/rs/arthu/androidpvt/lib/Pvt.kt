@@ -61,7 +61,7 @@ internal class Pvt(private val args: Args = Args.default()) {
         }
     }
 
-    fun restart() {
+    internal fun restart() {
         CoroutineScope(Default).launch {
             curJob?.cancelAndJoin()
 
@@ -72,7 +72,7 @@ internal class Pvt(private val args: Args = Args.default()) {
         }
     }
 
-    fun cancel() {
+    internal fun cancel() {
         curJob?.cancel()
     }
 
