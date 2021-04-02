@@ -1,6 +1,5 @@
 package rs.arthu.androidpvt.lib
 
-import android.util.Log
 import com.google.gson.Gson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Default
@@ -28,9 +27,7 @@ internal class Pvt(private val args: Args = Args.default()) {
     private val results: MutableList<Result> = mutableListOf()
 
     private var curState by Delegates.observable<State>(INIT_STATE, {
-            _, oldState, newState -> if (LOG_STATE_TRANSITIONS) {
-            Log.d(TAG, "transition ($oldState -> $newState)")
-        }
+            _, oldState, newState ->
         notifyStateChange(newState)
     })
 
@@ -303,7 +300,6 @@ internal class Pvt(private val args: Args = Args.default()) {
 
     private companion object {
         private const val TAG = "PVT"
-        private const val LOG_STATE_TRANSITIONS: Boolean = false
         private val INIT_STATE = Instructions()
     }
 
