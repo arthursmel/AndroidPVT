@@ -43,7 +43,6 @@ internal class Pvt(private val args: Args = Args.default()) {
                     curJob = runTest(true, remainingTestCount)
                 }
             }
-            is Countdown -> {}
             is Interval -> {
                 CoroutineScope(Default).launch {
                     curJob?.cancelAndJoin()
@@ -54,9 +53,7 @@ internal class Pvt(private val args: Args = Args.default()) {
                 val reactionTimestamp = System.currentTimeMillis()
                 curState = curState.consumeAction(Action.ValidReaction(reactionTimestamp))
             }
-            is InvalidReaction -> {}
-            is ValidReaction -> {}
-            is Complete -> {}
+            is Countdown, is InvalidReaction, is ValidReaction, is Complete -> {}
             else -> throw IllegalStateException()
         }
     }
