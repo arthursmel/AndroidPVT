@@ -4,6 +4,8 @@ import com.google.gson.Gson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Default
 import kotlinx.coroutines.Dispatchers.Main
+import rs.arthu.androidpvt.lib.Utils.Companion.addSafe
+import rs.arthu.androidpvt.lib.Utils.Companion.toJson
 import java.lang.IllegalStateException
 import kotlin.properties.Delegates
 
@@ -26,7 +28,7 @@ internal class Pvt(private val args: Args = Args.default()) {
     private var curJob: Job? = null
     private val results: MutableList<Result> = mutableListOf()
 
-    private var curState by Delegates.observable<State>(INIT_STATE, {
+    private var curState by Delegates.observable<PvtState.State>(PvtState.INIT_STATE, {
             _, _, newState ->
         notifyStateChange(newState)
     })
@@ -35,20 +37,23 @@ internal class Pvt(private val args: Args = Args.default()) {
         val reactionTimestamp = System.currentTimeMillis()
 
         when (curState) {
-            is Instructions -> {
+            is PvtState.Instructions -> {
                 // Checking if job is null, otherwise if user quickly presses instructions
                 // multiple jobs may be run
                 if (curJob == null) {
                     runTest()
                 }
             }
-            is Interval -> {
-                curState = curState.consumeAction(Action.InvalidReaction)
+            is PvtState.Interval -> {
+                curState = curState.consumeAction(PvtState.Action.InvalidReaction)
             }
-            is StimulusShowing -> {
-                curState = curState.consumeAction(Action.ValidReaction(reactionTimestamp))
+            is PvtState.StimulusShowing -> {
+                curState = curState.consumeAction(PvtState.Action.ValidReaction(reactionTimestamp))
             }
-            is Countdown, is InvalidReaction, is ValidReaction, is Complete -> {}
+            is PvtState.Countdown,
+            is PvtState.InvalidReaction,
+            is PvtState.ValidReaction,
+            is PvtState.Complete -> {}
             else -> throw IllegalStateException()
         }
     }
@@ -67,7 +72,7 @@ internal class Pvt(private val args: Args = Args.default()) {
 
                 runInterval(intervalDelay)
 
-                if (curState is InvalidReaction) {
+                if (curState is PvtState.InvalidReaction) {
                     continue
                 }
 
@@ -107,12 +112,12 @@ internal class Pvt(private val args: Args = Args.default()) {
     }
 
     private suspend fun runInterval(delay: Long) {
-        curState = curState.consumeAction(Action.StartInterval)
+        curState = curState.consumeAction(PvtState.Action.StartInterval)
         delay(delay)
     }
 
     private suspend fun runStimulus(startTimestamp: Long, interval: Long): Result? {
-        curState = curState.consumeAction(Action.ShowStimulus)
+        curState = curState.consumeAction(PvtState.Action.ShowStimulus)
 
         while (testHasNotTimedOut(startTimestamp) &&
                 !validReactionHasOccurred() &&
@@ -124,15 +129,15 @@ internal class Pvt(private val args: Args = Args.default()) {
         }
 
         return when (curState) {
-            is ValidReaction -> handleValidReaction(startTimestamp, interval)
+            is PvtState.ValidReaction -> handleValidReaction(startTimestamp, interval)
             else -> {
-                curState = curState.consumeAction(Action.InvalidReaction)
+                curState = curState.consumeAction(PvtState.Action.InvalidReaction)
                 null // returning null as test timed out, no result created
             }
         }
     }
 
-    private fun validReactionHasOccurred() = curState is ValidReaction
+    private fun validReactionHasOccurred() = curState is PvtState.ValidReaction
 
     private fun testHasNotTimedOut(startTimestamp: Long) = timeSinceCalled(startTimestamp) < args.stimulusTimeout
 
@@ -141,7 +146,7 @@ internal class Pvt(private val args: Args = Args.default()) {
     private fun timeSinceCalled(startTimestamp: Long) = System.currentTimeMillis() - startTimestamp
 
     private suspend fun runCountdown() {
-        curState = curState.consumeAction(Action.StartCountdown)
+        curState = curState.consumeAction(PvtState.Action.StartCountdown)
 
         (args.countDownTime downTo ONE_SECOND step ONE_SECOND).forEach { i ->
             withContext(Main) {
@@ -152,7 +157,7 @@ internal class Pvt(private val args: Args = Args.default()) {
     }
 
     private suspend fun handleCompletePvt() {
-        curState = curState.consumeAction(Action.Complete)
+        curState = curState.consumeAction(PvtState.Action.Complete)
 
         delay(args.postResponseDelay)
 
@@ -162,7 +167,7 @@ internal class Pvt(private val args: Args = Args.default()) {
     }
 
     private suspend fun handleValidReaction(startTimestamp: Long, interval: Long): Result {
-        val reactionTimestamp = (curState as ValidReaction).reactionDelay
+        val reactionTimestamp = (curState as PvtState.ValidReaction).reactionDelay
         val reactionDelay = reactionTimestamp - startTimestamp
 
         // Posting the most accurate reaction delay to the main thread
@@ -180,102 +185,8 @@ internal class Pvt(private val args: Args = Args.default()) {
 
     private fun getRandomIntervalDelay(): Long = (args.minInterval..args.maxInterval).random()
 
-    private fun <T> MutableList<T>.addSafe(item: T?) {
-        item?.let {
-            this.add(it)
-        }
-    }
-
-    private fun <T> MutableList<T>.toJson(): String = Gson().toJson(this)
-
-    internal class Instructions : State {
-        override fun consumeAction(action: Action): State {
-            return when (action) {
-                is Action.StartCountdown -> Countdown()
-                is Action.Restart -> INIT_STATE
-                else -> throw IllegalStateException()
-            }
-        }
-    }
-
-    internal class Countdown : State {
-        override fun consumeAction(action: Action): State {
-            return when (action) {
-                is Action.StartInterval -> Interval()
-                is Action.Restart -> INIT_STATE
-                else -> throw IllegalStateException()
-            }
-        }
-    }
-
-    internal class Interval : State {
-        override fun consumeAction(action: Action): State {
-            return when (action) {
-                is Action.ShowStimulus -> StimulusShowing()
-                is Action.InvalidReaction -> InvalidReaction()
-                is Action.Restart -> INIT_STATE
-                else -> throw IllegalStateException()
-            }
-        }
-    }
-
-    internal class StimulusShowing : State {
-        override fun consumeAction(action: Action): State {
-            return when (action) {
-                is Action.ValidReaction -> ValidReaction(action.reactionDelay)
-                is Action.InvalidReaction -> InvalidReaction()
-                is Action.Restart -> INIT_STATE
-                else -> throw IllegalStateException()
-            }
-        }
-    }
-
-    internal class ValidReaction(val reactionDelay: Long) : State {
-        override fun consumeAction(action: Action): State {
-            return when (action) {
-                is Action.StartInterval -> Interval()
-                is Action.Complete -> Complete()
-                is Action.Restart -> INIT_STATE
-                else -> throw IllegalStateException()
-            }
-        }
-    }
-
-    internal class InvalidReaction : State {
-        override fun consumeAction(action: Action): State {
-            return when (action) {
-                is Action.StartInterval -> Interval()
-                is Action.Restart -> INIT_STATE
-                else -> throw IllegalStateException()
-            }
-        }
-    }
-
-    internal class Complete : State {
-        override fun consumeAction(action: Action): State {
-            return when (action) {
-                is Action.Restart -> INIT_STATE
-                else -> this
-            }
-        }
-    }
-
-    internal sealed class Action {
-        object Restart : Action()
-        object StartCountdown : Action()
-        object StartInterval : Action()
-        object ShowStimulus : Action()
-        class ValidReaction(val reactionDelay: Long) : Action()
-        object InvalidReaction : Action()
-        object Complete : Action()
-    }
-
-    internal interface State {
-        fun consumeAction(action: Action): State
-    }
-
     internal interface Listener {
-        fun onStateUpdate(newState: State) = Unit
+        fun onStateUpdate(newState: PvtState.State) = Unit
         fun onCountdownUpdate(millisElapsed: Long) = Unit
         fun onReactionDelayUpdate(millisElapsed: Long) = Unit
         fun onCompleteTest(jsonResults: String) = Unit
@@ -293,14 +204,9 @@ internal class Pvt(private val args: Args = Args.default()) {
         stimulusListener = listener
     }
 
-    private fun notifyStateChange(newState: State) {
+    private fun notifyStateChange(newState: PvtState.State) {
         CoroutineScope(Main).launch {
             listener?.onStateUpdate(newState)
         }
     }
-
-    private companion object {
-        private val INIT_STATE = Instructions()
-    }
-
 }

@@ -57,17 +57,17 @@ class PvtActivity : AppCompatActivity(), Pvt.StimulusListener {
         viewModel.pvtState.observe(this, stateObserver)
     }
 
-    private val stateObserver = Observer<Pvt.State> {
+    private val stateObserver = Observer<PvtState.State> {
         when (it) {
-            is Pvt.Instructions -> displayInstructions()
-            is Pvt.Countdown -> displayCountdown()
-            is Pvt.Interval -> displayInterval()
-            is Pvt.StimulusShowing -> {} // Stimulus listener handles
+            is PvtState.Instructions -> displayInstructions()
+            is PvtState.Countdown -> displayCountdown()
+            is PvtState.Interval -> displayInterval()
+            is PvtState.StimulusShowing -> {} // Stimulus listener handles
             // state change here, otherwise time taken to show stimulus
             // affects result significantly
-            is Pvt.InvalidReaction -> displayInvalidReaction()
-            is Pvt.ValidReaction -> {}
-            is Pvt.Complete -> displayComplete()
+            is PvtState.InvalidReaction -> displayInvalidReaction()
+            is PvtState.ValidReaction -> {}
+            is PvtState.Complete -> displayComplete()
             else -> throw IllegalStateException()
         }
     }

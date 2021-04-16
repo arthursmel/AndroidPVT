@@ -8,8 +8,8 @@ internal class PvtViewModel(args: Args) : ViewModel(), Pvt.Listener {
 
     internal var pvt: Pvt = Pvt(args)
 
-    private val _pvtState = MutableLiveData<Pvt.State>()
-    val pvtState: LiveData<Pvt.State>
+    private val _pvtState = MutableLiveData<PvtState.State>()
+    val pvtState: LiveData<PvtState.State>
         get() = _pvtState
 
     private val _countdown = MutableLiveData<String>()
@@ -28,7 +28,7 @@ internal class PvtViewModel(args: Args) : ViewModel(), Pvt.Listener {
         pvt.setListener(this)
     }
 
-    override fun onStateUpdate(newState: Pvt.State) {
+    override fun onStateUpdate(newState: PvtState.State) {
         _pvtState.value = newState
     }
 
