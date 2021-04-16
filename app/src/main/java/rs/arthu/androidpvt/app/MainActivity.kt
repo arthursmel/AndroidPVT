@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity() {
             startPvtActivity()
         }
     }
-
+    
     private fun startPvtActivity() {
         val pvtActivityIntent = PvtActivity.Builder()
             .withStimulusCount(3)
