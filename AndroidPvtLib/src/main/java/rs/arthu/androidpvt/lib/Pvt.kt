@@ -123,11 +123,12 @@ internal class Pvt(private val args: Args = Args.default()) {
             }
         }
 
-        return if (curState is ValidReaction) {
-            handleValidReaction(startTimestamp, interval)
-        } else {
-            curState = curState.consumeAction(Action.InvalidReaction)
-            null // returning null as test timed out, no result created
+        return when (curState) {
+            is ValidReaction -> handleValidReaction(startTimestamp, interval)
+            else -> {
+                curState = curState.consumeAction(Action.InvalidReaction)
+                null // returning null as test timed out, no result created
+            }
         }
     }
 
