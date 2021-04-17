@@ -9,9 +9,10 @@ import android.view.View
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import rs.arthu.androidpvt.lib.databinding.ActivityPvtBinding
+import java.io.Serializable
 
 const val PVT_RESULTS_KEY = "pvtResultsKey"
-internal const val STIMULUS_COUNT = "stimulusCount"
+internal const val TEST_COUNT = "testCount"
 internal const val MIN_INTERVAL = "minInterval"
 internal const val MAX_INTERVAL = "maxInterval"
 internal const val COUNTDOWN_TIME = "countdownTime"
@@ -57,17 +58,17 @@ class PvtActivity : AppCompatActivity(), Pvt.StimulusListener {
         viewModel.pvtState.observe(this, stateObserver)
     }
 
-    private val stateObserver = Observer<Pvt.State> {
+    private val stateObserver = Observer<PvtState.State> {
         when (it) {
-            is Pvt.Instructions -> displayInstructions()
-            is Pvt.Countdown -> displayCountdown()
-            is Pvt.Interval -> displayInterval()
-            is Pvt.StimulusShowing -> {} // Stimulus listener handles
+            is PvtState.Instructions -> displayInstructions()
+            is PvtState.Countdown -> displayCountdown()
+            is PvtState.Interval -> displayInterval()
+            is PvtState.StimulusShowing -> {} // Stimulus listener handles
             // state change here, otherwise time taken to show stimulus
             // affects result significantly
-            is Pvt.InvalidReaction -> displayInvalidReaction()
-            is Pvt.ValidReaction -> {}
-            is Pvt.Complete -> displayComplete()
+            is PvtState.InvalidReaction -> displayInvalidReaction()
+            is PvtState.ValidReaction -> {}
+            is PvtState.Complete -> displayComplete()
             else -> throw IllegalStateException()
         }
     }
@@ -76,7 +77,7 @@ class PvtActivity : AppCompatActivity(), Pvt.StimulusListener {
         super.onTouchEvent(event)
 
         if (event?.action == MotionEvent.ACTION_DOWN) {
-            // Shortcutting the viewmodel, directly sending touch event to pvt
+            // Shortcutting the view model, directly sending touch event to pvt
             viewModel.pvt.handleActionDownTouchEvent()
         }
 
@@ -139,23 +140,25 @@ class PvtActivity : AppCompatActivity(), Pvt.StimulusListener {
         binding.textViewMain.text = getString(R.string.test_complete)
     }
 
-    private fun returnResults(jsonResults: String) {
+    private fun returnResults(results: List<Result>) {
         val returnIntent = Intent()
-        returnIntent.putExtra(PVT_RESULTS_KEY, jsonResults)
+
+        returnIntent.putExtra(PVT_RESULTS_KEY, results as Serializable)
+
         setResult(RESULT_OK, returnIntent)
         finish()
     }
 
     class Builder {
-        private var stimulusCount: Int? = null
+        private var testCount: Int? = null
         private var minInterval: Long? = null
         private var maxInterval: Long? = null
         private var countDownTime: Long? = null
         private var stimulusTimeout: Long? = null
         private var postResponseDelay: Long? = null
 
-        fun withStimulusCount(count: Int): Builder {
-            this.stimulusCount = count
+        fun withTestCount(count: Int): Builder {
+            this.testCount = count
             return this
         }
 
@@ -183,8 +186,8 @@ class PvtActivity : AppCompatActivity(), Pvt.StimulusListener {
         fun build(context: Context): Intent {
             val intent = Intent(context, PvtActivity::class.java)
 
-            stimulusCount?.let {
-                intent.putExtra(STIMULUS_COUNT, it)
+            testCount?.let {
+                intent.putExtra(TEST_COUNT, it)
             }
 
             minInterval?.let {

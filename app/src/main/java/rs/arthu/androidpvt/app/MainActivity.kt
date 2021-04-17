@@ -3,6 +3,7 @@ package rs.arthu.androidpvt.app
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import rs.arthu.androidpvt.app.databinding.ActivityMainBinding
 import rs.arthu.androidpvt.lib.PVT_RESULTS_KEY
@@ -26,7 +27,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun startPvtActivity() {
         val pvtActivityIntent = PvtActivity.Builder()
-            .withStimulusCount(3)
+            .withTestCount(3)
             .withCountdownTime(3 * 1000)
             .withInterval(2 * 1000, 4 * 1000)
             .withPostResponseDelay(2 * 1000)
@@ -41,14 +42,15 @@ class MainActivity : AppCompatActivity() {
 
         if (resultCode != RESULT_OK) return
 
-        val jsonResults: String? = when (requestCode) {
+        val results: List<HashMap<String, Number>>? = when (requestCode) {
             PVT_REQUEST -> {
-                data?.getStringExtra(PVT_RESULTS_KEY)
+                val list = data?.getSerializableExtra(PVT_RESULTS_KEY) as List<*>
+                list.filterIsInstance<HashMap<String, Number>>().takeIf { it.size == list.size }
             }
-            else -> "No results"
+            else -> null
         }
 
-        Toast.makeText(this, jsonResults, Toast.LENGTH_LONG).show()
+        Toast.makeText(this, results.toString(), Toast.LENGTH_LONG).show()
     }
 
     private companion object {

@@ -8,8 +8,8 @@ internal class PvtViewModel(args: Args) : ViewModel(), Pvt.Listener {
 
     internal var pvt: Pvt = Pvt(args)
 
-    private val _pvtState = MutableLiveData<Pvt.State>()
-    val pvtState: LiveData<Pvt.State>
+    private val _pvtState = MutableLiveData<PvtState.State>()
+    val pvtState: LiveData<PvtState.State>
         get() = _pvtState
 
     private val _countdown = MutableLiveData<String>()
@@ -20,15 +20,15 @@ internal class PvtViewModel(args: Args) : ViewModel(), Pvt.Listener {
     val reactionDelay: LiveData<String>
         get() = _reactionDelay
 
-    private val _results = MutableLiveData<String>()
-    val results: LiveData<String>
+    private val _results = MutableLiveData<List<Result>>()
+    val results: LiveData<List<Result>>
         get() = _results
 
     init {
         pvt.setListener(this)
     }
 
-    override fun onStateUpdate(newState: Pvt.State) {
+    override fun onStateUpdate(newState: PvtState.State) {
         _pvtState.value = newState
     }
 
@@ -40,8 +40,8 @@ internal class PvtViewModel(args: Args) : ViewModel(), Pvt.Listener {
         _reactionDelay.value = millisElapsed.toString()
     }
 
-    override fun onCompleteTest(jsonResults: String) {
-        _results.value = jsonResults
+    override fun onCompleteTest(results: List<Result>) {
+        _results.value = results
     }
 
     override fun onCleared() {

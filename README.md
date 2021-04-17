@@ -6,14 +6,14 @@ A psychomotor vigilance task (PVT) for Android.
 
 ## Installation
 ```swift
-implementation("rs.arthu:androidpvt:1.1.0")
+implementation("rs.arthu:androidpvt:1.2.0")
 ```
 
 ## Usage
 Create an Intent using the Builder:
 ```swift
 val pvtActivityIntent = PvtActivity.Builder()
-    .withStimulusCount(3) //
+    .withTestCount(3) //
     .withCountdownTime(3 * 1000)
     .withInterval(2 * 1000, 4 * 1000)
     .withPostResponseDelay(2 * 1000)
@@ -30,37 +30,39 @@ Builder methods:
 
 method | description | Default Value
 --- | --- | ---
-`.withStimulusCount(count: Int)` | Number of tasks a user will be asked to complete | 3
+`.withTestCount(count: Int)` | Number of tests a user will be asked to complete | 3
 `.withCountdownTime(time: Long)` | The countdown timer duration before the test starts | 3000ms
 `.withInterval(min: Long, max: Long)` | The interval used to general a random waiting duration before the stimulus is shown | 2000ms, 4000ms
 `.withStimulusTimeout(timeout: Long)` | The maximum duration a user can take to respond | 10000ms
 `.withPostResponseDelay(delay: Long)` | The time the user's response will be held on the screen for | 2000ms
 
 
-Results will then be returned in JSON format (for now)
+Results will then be returned as a `List<HashMap<String, Number>>`
 ```swift
 override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
     super.onActivityResult(requestCode, resultCode, data)
+
     if (resultCode != RESULT_OK) return
-    val jsonResults: String? = when (requestCode) {
+
+    val results: List<HashMap<String, Number>>? = when (requestCode) {
         PVT_REQUEST -> {
-            data?.getStringExtra(PVT_RESULTS_KEY)
+            val list = data?.getSerializableExtra(PVT_RESULTS_KEY) as List<*>
+            list.filterIsInstance<HashMap<String, Number>>().takeIf { it.size == list.size }
         }
-        else -> "No results"
-  }
+        else -> null
+    }
 }
 ```
-JSON format:
+Result format:
 ```json
 [
-    {
-        "interval": "<the random wait time before the stimulus is shown>",
-        "reactionDelay": "<the time it took for the user to response to the stimulus>",
-        "testNumber": "<the index of the test the user has completed>",
-        "timestamp": "<timestamp of reaction>"
-    }
+  {
+    "interval": "<the random wait time before the stimulus is shown>",
+    "reactionDelay": "<the time it took for the user to response to the stimulus>",
+    "testNumber": "<the index of the test the user has completed>",
+    "timestamp": "<timestamp of reaction>"
+  }
 ]
-
 ```
 
 ## References
