@@ -3,7 +3,7 @@ package rs.arthu.androidpvt.lib
 import android.os.Bundle
 
 internal class Args(
-    var stimulusCount: Int = DEFAULT_STIMULUS_COUNT,
+    var testCount: Int = DEFAULT_TEST_COUNT,
     var minInterval: Long = DEFAULT_MIN_INTERVAL,
     var maxInterval: Long = DEFAULT_MAX_INTERVAL,
     var countDownTime: Long = DEFAULT_COUNTDOWN_TIME,
@@ -12,14 +12,14 @@ internal class Args(
     ) {
 
     constructor(
-            stimulusCount: Int? = null,
+            testCount: Int? = null,
             minInterval: Long? = null,
             maxInterval: Long? = null,
             countDownTime: Long? = null,
             stimulusTimeout: Long? = null,
             postResponseDelay: Long? = null
     ) : this(
-            stimulusCount ?: DEFAULT_STIMULUS_COUNT,
+        testCount ?: DEFAULT_TEST_COUNT,
             minInterval ?: DEFAULT_MIN_INTERVAL,
             maxInterval ?: DEFAULT_MAX_INTERVAL,
             countDownTime ?: DEFAULT_COUNTDOWN_TIME,
@@ -30,7 +30,7 @@ internal class Args(
     companion object {
         fun default(): Args {
             return Args(
-                    DEFAULT_STIMULUS_COUNT,
+                    DEFAULT_TEST_COUNT,
                     DEFAULT_MIN_INTERVAL,
                     DEFAULT_MAX_INTERVAL,
                     DEFAULT_COUNTDOWN_TIME,
@@ -44,15 +44,15 @@ internal class Args(
 
             val keySet = bundle.keySet()
 
-            var stimulusCount: Int? = null
+            var testCount: Int? = null
             var minInterval: Long? = null
             var maxInterval: Long? = null
             var countDownTime: Long? = null
             var stimulusTimeout: Long? = null
             var postResponseDelay: Long? = null
 
-            if (keySet.contains(STIMULUS_COUNT)) {
-                stimulusCount = bundle.getInt(STIMULUS_COUNT)
+            if (keySet.contains(TEST_COUNT)) {
+                testCount = bundle.getInt(TEST_COUNT)
             }
 
             if (keySet.contains(MIN_INTERVAL)) {
@@ -76,7 +76,7 @@ internal class Args(
             }
 
             return Args(
-                    stimulusCount,
+                testCount,
                     minInterval,
                     maxInterval,
                     countDownTime,

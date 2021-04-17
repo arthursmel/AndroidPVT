@@ -1,21 +1,27 @@
 package rs.arthu.androidpvt.lib
 
-import com.google.gson.Gson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Default
 import kotlinx.coroutines.Dispatchers.Main
 import rs.arthu.androidpvt.lib.Utils.Companion.addSafe
-import rs.arthu.androidpvt.lib.Utils.Companion.toJson
 import java.lang.IllegalStateException
 import kotlin.properties.Delegates
 
 internal const val ONE_SECOND: Long = 1000
-internal const val DEFAULT_STIMULUS_COUNT = 3
+internal const val DEFAULT_TEST_COUNT = 3
 internal const val DEFAULT_MIN_INTERVAL = 2 * ONE_SECOND
 internal const val DEFAULT_MAX_INTERVAL = 4 * ONE_SECOND
 internal const val DEFAULT_COUNTDOWN_TIME = 3 * ONE_SECOND
 internal const val DEFAULT_STIMULUS_TIMEOUT = 10 * ONE_SECOND
 internal const val DEFAULT_POST_RESPONSE_DELAY = 2 * ONE_SECOND
+
+internal const val TEST_NUMBER = "testNumber"
+internal const val TIMESTAMP = "timestamp"
+internal const val INTERVAL = "interval"
+internal const val REACTION_DELAY = "reactionDelay"
+
+internal typealias Result = HashMap<String, Number>
+private const val RESULT_MAP_FIELD_COUNT = 4
 
 internal class Pvt(private val args: Args = Args.default()) {
 
@@ -24,7 +30,7 @@ internal class Pvt(private val args: Args = Args.default()) {
     // Stimulus listener is used to shortcut the view model
     // to improve performance showing the stimulus to the user
 
-    private var remainingTestCount = args.stimulusCount
+    private var remainingTestCount = args.testCount
     private var curJob: Job? = null
     private val results: MutableList<Result> = mutableListOf()
 
@@ -116,7 +122,9 @@ internal class Pvt(private val args: Args = Args.default()) {
         delay(delay)
     }
 
-    private suspend fun runStimulus(startTimestamp: Long, interval: Long): Result? {
+    private suspend fun runStimulus(
+        startTimestamp: Long, interval: Long
+    ): Result? {
         curState = curState.consumeAction(PvtState.Action.ShowStimulus)
 
         while (testHasNotTimedOut(startTimestamp) &&
@@ -162,11 +170,13 @@ internal class Pvt(private val args: Args = Args.default()) {
         delay(args.postResponseDelay)
 
         withContext(Main) {
-            listener?.onCompleteTest(results.toJson())
+            listener?.onCompleteTest(results)
         }
     }
 
-    private suspend fun handleValidReaction(startTimestamp: Long, interval: Long): Result {
+    private suspend fun handleValidReaction(
+        startTimestamp: Long, interval: Long
+    ): Result {
         val reactionTimestamp = (curState as PvtState.ValidReaction).reactionDelay
         val reactionDelay = reactionTimestamp - startTimestamp
 
@@ -175,12 +185,26 @@ internal class Pvt(private val args: Args = Args.default()) {
         // and value displaced on screen for the post response delay
         withContext(Main) { listener?.onReactionDelayUpdate(reactionDelay) }
 
-        return Result(
-                remainingTestCount,
-                startTimestamp,
-                interval,
-                reactionDelay
+        return getResult(
+            remainingTestCount,
+            startTimestamp,
+            interval,
+            reactionDelay
         )
+    }
+
+    private fun getResult(
+        remainingTestCount: Int,
+        startTimestamp: Long,
+        interval: Long,
+        reactionDelay: Long
+    ): Result {
+        val result = Result()
+        result[TEST_NUMBER] = remainingTestCount
+        result[TIMESTAMP] = startTimestamp
+        result[INTERVAL] = interval
+        result[REACTION_DELAY] = reactionDelay
+        return result
     }
 
     private fun getRandomIntervalDelay(): Long = (args.minInterval..args.maxInterval).random()
@@ -189,7 +213,7 @@ internal class Pvt(private val args: Args = Args.default()) {
         fun onStateUpdate(newState: PvtState.State) = Unit
         fun onCountdownUpdate(millisElapsed: Long) = Unit
         fun onReactionDelayUpdate(millisElapsed: Long) = Unit
-        fun onCompleteTest(jsonResults: String) = Unit
+        fun onCompleteTest(results: List<Result>) = Unit
     }
 
     internal interface StimulusListener {
@@ -210,3 +234,5 @@ internal class Pvt(private val args: Args = Args.default()) {
         }
     }
 }
+
+

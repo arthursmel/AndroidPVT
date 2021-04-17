@@ -9,7 +9,5 @@ internal class Utils {
                 this.add(it)
             }
         }
-
-        internal fun <T> MutableList<T>.toJson(): String = Gson().toJson(this)
     }
 }
