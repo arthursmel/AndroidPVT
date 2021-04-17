@@ -6,7 +6,7 @@ A psychomotor vigilance task (PVT) for Android.
 
 ## Installation
 ```swift
-implementation("rs.arthu:androidpvt:1.1.0")
+implementation("rs.arthu:androidpvt:1.2.0")
 ```
 
 ## Usage
